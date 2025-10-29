@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Carrito</h1>
+
+<div class="card pad">
+  <table style="width:100%; border-collapse:collapse">
+    <thead>
+      <tr>
+        <th style="text-align:left;padding:8px">ID</th>
+        <th style="text-align:left;padding:8px">Producto</th>
+        <th style="text-align:left;padding:8px">Precio</th>
+        <th style="text-align:left;padding:8px">Cantidad</th>
+        <th style="text-align:left;padding:8px">Subtotal</th>
+        <th style="text-align:left;padding:8px"></th>
+      </tr>
+    </thead>
+    <tbody id="cart-body"></tbody>
+  </table>
+  <hr>
+  <div class="row" style="justify-content:space-between">
+    <strong>Total:</strong>
+    <strong id="cart-total">$0.00</strong>
+  </div>
+</div>
+
+<div class="row" style="gap:10px; margin-top:12px">
+  <button class="btn outline" id="btn-clear">Vaciar</button>
+  <a class="btn" id="btn-checkout" href="#">Ir a pagar</a>
+</div>
+
+<script>
+function getCsrf(){const n='csrftoken=';return (document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith(n))||'').slice(n.length)||''}
+function num(v){ if (v === null || v === undefined || v === '') return 0; const n = Number(v); return Number.isFinite(n) ? n : 0; }
+function money(v){ return '$' + num(v).toFixed(2); }
+function itemId(it){ return (it.id ?? it.product_id ?? it.product ?? it.pid ?? null); }
+
+async function fetchCart(){
+  const r = await fetch('/api/cart/', {headers:{'X-Requested-With':'fetch'}});
+  return await r.json();
+}
+async function post(url, body){
+  const r = await fetch(url,{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'X-CSRFToken':getCsrf(),
+      'X-Requested-With':'fetch'
+    },
+    body: JSON.stringify(body||{})
+  });
+  return await r.json();
+}
+
+function computeTotal(items){
+  return items.reduce((acc, it)=> acc + num(it.subtotal || (num(it.price)*num(it.qty))), 0);
+}
+
+function renderCart(data){
+  const tbody = document.getElementById('cart-body');
+  tbody.innerHTML = '';
+  const items = Array.isArray(data.items) ? data.items : [];
+
+  if (items.length === 0){
+    tbody.innerHTML = `<tr><td colspan="6" style="padding:12px;color:#666">Tu carrito está vacío.</td></tr>`;
+  } else {
+    for (const it of items){
+      const id = itemId(it);
+      const name = it.name || '-';
+      const price = num(it.price);
+      const qty = Math.max(1, num(it.qty));
+      const subtotal = num(it.subtotal || price * qty);
+
+      const tr = document.createElement('tr');
+      tr.style.borderTop = '1px solid #eee';
+      tr.innerHTML = `
+        <td style="padding:8px">${id ?? '-'}</td>
+        <td style="padding:8px">${name}</td>
+        <td style="padding:8px">${money(price)}</td>
+        <td style="padding:8px">
+          <input type="number" min="1" value="${qty}" data-id="${id ?? ''}"
+                 style="width:64px;padding:6px;border:1px solid #ddd;border-radius:8px">
+        </td>
+        <td style="padding:8px"><strong>${money(subtotal)}</strong></td>
+        <td style="padding:8px">
+          <button class="btn outline btn-remove" data-id="${id ?? ''}">Quitar</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
+  }
+
+  // Total: usa el del backend si viene correcto; si no, lo calcula el front.
+  const backendTotal = num(data.total_price);
+  const computed = computeTotal(items);
+  document.getElementById('cart-total').textContent = money(backendTotal || computed);
+
+  // Listeners: update qty
+  tbody.querySelectorAll('input[type="number"]').forEach(inp=>{
+    inp.addEventListener('change', async ()=>{
+      const id = Number(inp.dataset.id);
+      const qty = Math.max(1, parseInt(inp.value||1, 10));
+      if (!id) return; // no dispares requests inválidos
+      const updated = await post('/api/cart/update/', { product_id: id, qty });
+      renderCart(updated);
+      updateCartBadge(num(updated.total_qty));
+    });
+  });
+
+  // Listeners: remove
+  tbody.querySelectorAll('.btn-remove').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const id = Number(btn.dataset.id);
+      if (!id) return;
+      const updated = await post('/api/cart/remove/', { product_id: id });
+      renderCart(updated);
+      updateCartBadge(num(updated.total_qty));
+    });
+  });
+}
+
+document.getElementById('btn-clear').addEventListener('click', async ()=>{
+  const updated = await post('/api/cart/clear/', {});
+  renderCart(updated);
+  updateCartBadge(0);
+});
+
+document.getElementById('btn-checkout').addEventListener('click', async (e)=>{
+  e.preventDefault();
+  const data = await fetchCart();
+  const items = Array.isArray(data.items) ? data.items : [];
+  if (items.length === 0){ alert('Tu carrito está vacío.'); return; }
+  alert('Checkout simulado. Integraremos pagos en su semana.');
+});
+
+// primera carga
+(async ()=>{ renderCart(await fetchCart()); })();
+
+function num(v){ const n = Number(v); return Number.isFinite(n) ? n : 0; }
+function money(v){ return '$' + num(v).toFixed(2); }
+function itemId(it){ return num(it?.product_id ?? it?.id ?? it?.product ?? it?.pid ?? 0); }
+
+const backendTotal = num(data.total_price);
+const computed = computeTotal(items);
+document.getElementById('cart-total').textContent = money(backendTotal || computed);
+
+</script>
+{% endblock %}

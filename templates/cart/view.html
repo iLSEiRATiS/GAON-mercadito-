@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Tu carrito</h1>
+
+<div id="cart-root"></div>
+
+<script>
+function fmt(n){
+  const v = Number(n);
+  if (Number.isNaN(v)) return "$0.00";
+  return v.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 2 });
+}
+
+async function api(path, method='GET', body=null){
+  const opt = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opt.body = JSON.stringify(body);
+  const r = await fetch(path, opt);
+  return r.json();
+}
+
+async function loadCart(){
+  const data = await api('/api/cart/');
+  const root = document.getElementById('cart-root');
+
+  const items = Array.isArray(data.items) ? data.items : [];
+
+  let total = Number(data.total_price);
+  if (!Number.isFinite(total)) {
+    total = items.reduce((acc, it) => {
+      const sub = Number(it.subtotal);
+      return acc + (Number.isFinite(sub) ? sub : 0);
+    }, 0);
+  }
+
+  if (!items.length){
+    root.innerHTML = `
+      <p>Tu carrito está vacío.</p>
+      <a class="btn outline" href="/products/">Seguir comprando</a>
+    `;
+    window.GAON_CART?.refresh?.();
+    return;
+  }
+
+  const rows = items.map(it => {
+    const p = it.product || {};
+    const img = p.imagen_url || it.image || 'https://via.placeholder.com/120x120?text=GAON';
+    const name = p.nombre || it.name || 'Producto';
+    const price = Number(p.precio ?? it.price);
+    const qty = Number(it.qty) || 0;
+    const subtotal = Number(it.subtotal);
+
+    return `
+      <div class="card" style="display:flex; gap:12px; padding:12px; align-items:center">
+        <img src="${img}" alt="${name}" style="width:90px;height:90px;object-fit:cover;border-radius:8px;background:#fafafa">
+        <div style="flex:1">
+          <div style="font-weight:600">${name}</div>
+          <div style="color:#555">${fmt(price)} x ${qty}</div>
+          <div style="margin-top:6px"><strong>${fmt(subtotal)}</strong></div>
+        </div>
+        <div class="row" style="gap:6px">
+          <button class="btn outline" onclick="updateQty(${it.product_id || p.id}, ${Math.max(qty-1,0)})">-</button>
+          <span style="min-width:28px;text-align:center">${qty}</span>
+          <button class="btn outline" onclick="updateQty(${it.product_id || p.id}, ${qty+1})">+</button>
+          <button class="btn" style="background:#c0392b" onclick="removeItem(${it.product_id || p.id})">Quitar</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  root.innerHTML = `
+    <div class="grid" style="grid-template-columns:1fr; gap:12px">
+      ${rows}
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">
+      <button class="btn outline" onclick="clearCart()">Vaciar carrito</button>
+      <div style="font-size:18px">Total: <strong>${fmt(total)}</strong></div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+      <a class="btn outline" href="/products/">Seguir comprando</a>
+      <button class="btn" onclick="checkout()">Finalizar compra</button>
+    </div>
+  `;
+
+  window.GAON_CART?.refresh?.();
+}
+
+async function updateQty(product_id, qty){
+  if (!Number.isFinite(Number(product_id))) return;
+  if (qty <= 0) return removeItem(product_id);
+  await api('/api/cart/update/', 'POST', { product_id, qty });
+  await loadCart();
+}
+
+async function removeItem(product_id){
+  await api('/api/cart/remove/', 'POST', { product_id });
+  await loadCart();
+}
+
+async function clearCart(){
+  await api('/api/cart/clear/', 'POST');
+  await loadCart();
+}
+
+async function checkout(){
+  const data = await api('/api/cart/checkout/', 'POST');
+  window.GAON_UI?.toast?.('Carrito listo para pagar');
+  console.log('checkout', data);
+}
+
+loadCart();
+</script>
+{% endblock %}

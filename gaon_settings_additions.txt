@@ -1,0 +1,8 @@
+# --- ADD THIS inside your gaon/settings.py ---
+# Ensure DRF serializes Decimals as JSON numbers (not strings)
+REST_FRAMEWORK = {
+    **(globals().get("REST_FRAMEWORK", {}) or {}),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "COERCE_DECIMAL_TO_STRING": False,
+}
+# --- END ADD ---
