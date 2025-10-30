@@ -9,6 +9,10 @@ class Category(models.Model):
     nombre = models.CharField(max_length=80, unique=True)
     slug = models.SlugField(max_length=90, unique=True)
 
+    class Meta:
+        verbose_name = "Category"
+        verbose_name_plural = "Categories"
+
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.nombre)

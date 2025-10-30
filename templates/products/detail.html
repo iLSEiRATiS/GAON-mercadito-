@@ -2,7 +2,18 @@
 {% block content %}
 <div class="row" style="gap:20px;align-items:flex-start">
   <div class="card" style="flex:1;max-width:520px">
-    {% if p.imagen %}<img src="{{ p.imagen.url }}" alt="{{ p.nombre }}">{% else %}<img src="https://via.placeholder.co/800x500?text=GAON" alt="{{ p.nombre }}">{% endif %}
+    <div class="imgbox" style="height:320px">
+      {% if p.imagen %}
+        <img src="{{ p.imagen.url }}" alt="{{ p.nombre }}">
+      {% else %}
+        <div class="ph" aria-label="Sin imagen">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm0 2v9.586l-3.293-3.293a1 1 0 0 0-1.414 0L10 15.586l-2.293-2.293a1 1 0 0 0-1.414 0L5 14.586V5h14ZM5 19v-2.586l2.293-2.293 2.293 2.293a1 1 0 0 0 1.414 0L15.586 12 19 15.414V19H5Zm4-9a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
+          </svg>
+          <small>Sin imagen</small>
+        </div>
+      {% endif %}
+    </div>
   </div>
   <div style="flex:1">
     <h1>{{ p.nombre }}</h1>
@@ -17,11 +28,20 @@
   </div>
 </div>
 <script>
-function getCsrf(){const n='csrftoken=';return (document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith(n))||'').slice(n.length)||''}
+function getCsrf(){ const n='csrftoken='; return (document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith(n))||'').slice(n.length) || '' }
+
 async function add(){
-  const qty=parseInt(document.getElementById('qty').value||'1',10);
-  await fetch('/api/cart/add/',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':getCsrf()},body:JSON.stringify({product_id:{{ p.id }},qty})});
-  alert('Agregado');
+  const qty = parseInt(document.getElementById('qty').value || '1', 10);
+  await fetch('/api/cart/add/', {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', 'X-CSRFToken': getCsrf() },
+    body: JSON.stringify({ product_id: {{ p.id }}, qty })
+  });
+
+  // 👉 actualiza el badge sin recargar
+  window.GAON_CART?.refresh?.();
+
+  window.GAON_UI?.toast('Agregado al carrito');
 }
 </script>
 {% endblock %}

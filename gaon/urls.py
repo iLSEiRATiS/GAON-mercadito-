@@ -35,5 +35,4 @@ urlpatterns = [
     path('login/', login_page, name='login-page'),
     path('signup/', signup_page, name='signup-page'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-path('account/', include('users.web_urls')),
 
