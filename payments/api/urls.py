@@ -1,6 +1,9 @@
 from django.urls import path
-from .views import MPCreatePreferenceView
+from .views import CreatePreferenceView, WebhookView
 
 urlpatterns = [
-    path('mp/preference/', MPCreatePreferenceView.as_view(), name='mp-create-preference'),
+    path('create/', CreatePreferenceView.as_view(), name='payments_create'),          # ← ruta pedida
+    path('mp/preference/', CreatePreferenceView.as_view(), name='mp_create_preference'),
+    path('mp/webhook/', WebhookView.as_view(), name='mp_webhook'),
 ]
+

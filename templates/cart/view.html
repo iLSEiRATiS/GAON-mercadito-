@@ -97,6 +97,8 @@ async function loadCart(){
       <a class="btn outline" href="/products/">Seguir comprando</a>
       <button class="btn" onclick="checkout()">Finalizar compra</button>
     </div>
+    <!-- 👉 placeholder para el aviso post-pago -->
+    <div id="post-checkout" style="margin-top:14px"></div>    
   `;
 
   window.GAON_CART?.refresh?.();
@@ -120,10 +122,81 @@ async function clearCart(){
 }
 
 async function checkout(){
-  const data = await api('/api/cart/checkout/', 'POST');
-  window.GAON_UI?.toast?.('Carrito listo para pagar');
-  console.log('checkout', data);
+  try{
+    // 1) Traemos el carrito actual desde la API
+    const cart = await api('/api/cart/'); // ya tenés api() arriba
+
+    const items = (Array.isArray(cart.items) ? cart.items : [])
+      .map(it => {
+        const p = it.product || {};
+        return {
+          product_id: Number(it.product_id || p.id),
+          qty: Number(it.qty || 0),
+          // opcional: mando nombre/precio para mostrar, pero el backend lo revalida
+          title: p.nombre || it.name || 'Producto',
+          price: Number(p.precio ?? it.price ?? 0)
+        };
+      })
+      .filter(x => Number.isFinite(x.product_id) && x.qty > 0);
+
+    if (!items.length){
+      window.GAON_UI?.toast?.('Tu carrito está vacío', 'err');
+      return;
+    }
+
+    // 2) Creamos la preferencia en el backend pasando los items
+    const data = await api('/api/payments/create/', 'POST', { items });
+
+    if (data && data.init_point){
+      // actualizar badge si viene la cuenta
+      if (typeof data.count === 'number'){
+        const badge = document.getElementById('cart-count');
+        if (badge){ badge.textContent = String(data.count); badge.style.display = 'inline-block'; }
+      }
+      // 3) Redirigimos al Checkout Pro
+      window.open(data.init_point, '_blank', 'noopener');
+      window.GAON_UI?.toast?.('Se abrió Mercado Pago en otra pestaña. Volvé acá cuando termines.');
+
+      // pintar el aviso con botón "Ya pagué"
+      const pc = document.getElementById('post-checkout');
+      if (pc){
+        pc.innerHTML = `
+          <div class="card" style="padding:12px;border-left:6px solid #16a085">
+            <div style="font-weight:600; margin-bottom:6px">¿Terminaste el pago?</div>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+              <button class="btn" onclick="confirmPayment()">Ya pagué</button>
+              <a class="btn outline" href="/payments/pending/">Tuve un problema</a>
+            </div>
+            <small style="color:#555;display:block;margin-top:6px">
+              Al confirmar, vaciamos tu carrito y podés seguir comprando.
+            </small>
+          </div>
+        `;
+      }
+      
+      return;
+    }
+
+    window.GAON_UI?.toast?.('Respuesta inválida de MP', 'err');
+  }catch(e){
+    window.GAON_UI?.toast?.('No se pudo iniciar el pago', 'err', String(e));
+  }
 }
+
+async function confirmPayment(){
+  // En este MVP no validamos contra MP; simplemente registramos la compra vaciando el carrito.
+  try{
+    await api('/api/cart/clear/', 'POST');
+    await loadCart();                 // re-render del carrito (mostrará "carrito vacío")
+    await window.GAON_CART?.refresh?.(); // actualiza el badge del header
+    window.GAON_UI?.toast?.('¡Compra registrada! Gracias por tu pago.');
+    // (Opcional) redirigir a una página de gracias:
+    //location.href = '/payments/success/';
+  }catch(e){
+    window.GAON_UI?.toast?.('No pudimos registrar la compra', 'err', String(e));
+  }
+}
+
 
 loadCart();
 </script>

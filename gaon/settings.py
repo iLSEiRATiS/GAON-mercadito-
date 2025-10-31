@@ -1,10 +1,19 @@
 from pathlib import Path
+import environ
+import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'dev-secret-key-gaon'
-DEBUG = True
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+# --- django-environ ---
+env = environ.Env(
+    DEBUG=(bool, False),
+)
+# Lee el archivo .env (si existe)
+environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
+
+SECRET_KEY = env("SECRET_KEY", default="dev-secret-key-gaon")
+DEBUG = env("DEBUG")
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["127.0.0.1", "localhost"])
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -94,9 +103,18 @@ SPECTACULAR_SETTINGS = {
 }
 
 LOGIN_URL = '/login/'
-import os
-MP_ACCESS_TOKEN = os.environ.get('MP_ACCESS_TOKEN', 'TEST-REEMPLAZAR-CON-TU-TOKEN')
 
+
+# MercadoPago
+MP_ACCESS_TOKEN = env("MP_ACCESS_TOKEN", default="")
+MP_PUBLIC_KEY = env("MP_PUBLIC_KEY", default="")
+
+# URL base para back_urls/webhook (lo usamos en payments)
+SITE_URL = env("SITE_URL", default="")
+def ABSOLUTE_URI(request, path: str):
+    if SITE_URL:
+        return SITE_URL.rstrip("/") + path
+    return request.build_absolute_uri(path)
 
 # Static & Media
 from pathlib import Path as _P

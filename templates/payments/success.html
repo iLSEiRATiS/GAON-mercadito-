@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>✅ Pago aprobado</h1>
+<p>¡Gracias por tu compra!</p>
+<ul>
+  {% if payment_id %}<li><b>Payment ID:</b> {{ payment_id }}</li>{% endif %}
+  {% if preference_id %}<li><b>Preference:</b> {{ preference_id }}</li>{% endif %}
+  {% if external_reference %}<li><b>Referencia:</b> {{ external_reference }}</li>{% endif %}
+</ul>
+<a class="btn" href="/products/">Seguir comprando</a>
+{% endblock %}
