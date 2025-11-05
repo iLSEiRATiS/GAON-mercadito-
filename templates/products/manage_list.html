@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Gestión de productos</h1>
+
+<div class="row" style="gap:8px;margin-bottom:12px">
+  <a class="btn" href="/products/manage/new/">Nuevo producto</a>
+  <a class="btn outline" href="/products/">Ir a tienda</a>
+</div>
+
+{% if page_obj.object_list %}
+  <div class="grid">
+    {% for p in page_obj.object_list %}
+      <div class="card">
+        <div class="imgbox">
+          {% if p.imagen %}
+            <img src="{{ p.imagen.url }}" alt="{{ p.nombre }}">
+          {% else %}
+            <div class="ph">Sin imagen</div>
+          {% endif %}
+        </div>
+        <div class="pad">
+          <div class="row" style="justify-content:space-between">
+            <div class="price">${{ p.precio }}</div>
+            <small>{{ p.creado_en|date:"Y-m-d" }}</small>
+          </div>
+          <h3 style="margin:.4rem 0">{{ p.nombre }}</h3>
+          <div class="row" style="gap:8px;flex-wrap:wrap">
+            <a class="btn outline" href="/products/{{ p.id }}/">Ver</a>
+            <a class="btn outline" href="/products/manage/{{ p.id }}/edit/">Editar</a>
+            <a class="btn outline" href="/products/manage/{{ p.id }}/delete/">Borrar</a>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="row" style="justify-content:center;gap:8px;margin-top:12px">
+    {% if page_obj.has_previous %}
+      <a class="btn outline" href="?page={{ page_obj.previous_page_number }}">« Anterior</a>
+    {% endif %}
+    <span class="card pad">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+      <a class="btn outline" href="?page={{ page_obj.next_page_number }}">Siguiente »</a>
+    {% endif %}
+  </div>
+{% else %}
+  <div class="card pad">No tenés productos aún.</div>
+{% endif %}
+{% endblock %}

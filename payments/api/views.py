@@ -129,7 +129,7 @@ class CreatePreferenceView(APIView):
         success_url = abs_uri("/payments/success/")
         failure_url = abs_uri("/payments/failure/")
         pending_url = abs_uri("/payments/pending/")
-        notification_url = abs_uri("/api/payments/mp/webhook/")
+        #notification_url = abs_uri("/api/payments/mp/webhook/")
 
         ref = f"cart-{request.session.session_key or 'anon'}-{int(timezone.now().timestamp())}"
 
@@ -143,7 +143,7 @@ class CreatePreferenceView(APIView):
                 "failure": failure_url,
                 "pending": pending_url,
             },
-            "notification_url": notification_url,
+            #"notification_url": notification_url,
             # "auto_return": "approved",  # ⬅️ comentar/quitar en desarrollo
             "external_reference": ref,
         }

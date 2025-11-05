@@ -55,6 +55,11 @@
       <div class="row" style="margin-top:10px">
         <button class="btn add" data-id="{{ p.id }}">Agregar</button>
         <a class="btn outline" href="/products/{{ p.id }}/">Ver</a>
+        {% if request.user.is_authenticated %}
+          {% if request.user.is_staff or p.user_id == request.user.id %}
+            <a class="btn outline" href="/products/manage/{{ p.id }}/edit/">Editar</a>
+          {% endif %}
+        {% endif %}
       </div>
     </div>
   </div>

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card pad" style="max-width:520px;margin:20px auto">
+  <h2>Conectando tu cuenta…</h2>
+  <p>Estamos finalizando el inicio de sesión.</p>
+</div>
+
+<script>
+localStorage.setItem('gaon_token', '{{ token }}');
+window.location.href = '{{ redirect_to }}';
+</script>
+
+{% endblock %}

@@ -45,12 +45,15 @@
 <body>
   <header>
     <div class="wrap row" style="justify-content:space-between">
-      <a href="/products/" class="row" style="gap:8px;align-items:center" aria-label="Inicio GAON">
+      <a href="/" class="row" style="gap:8px;align-items:center" aria-label="Inicio GAON">
         <img src="{% static 'gaon.ico' %}" alt="GAON" style="width:24px;height:24px;display:block">
       </a>
 
       <nav class="row" id="nav-auth">
         <a href="/products/">Productos</a>
+        {% if request.user.is_authenticated and request.user.is_staff %}
+          <a href="/categories/manage/">Categorías</a>
+        {% endif %}
         <a href="/cart/">Carrito <span id="cart-count" class="badge" style="display:none">0</span></a>
         <a href="/login/" data-guest>Login</a>
         <a href="/signup/" data-guest>Crear cuenta</a>
@@ -109,46 +112,73 @@
         if(n>0){ badge.textContent = String(n); badge.style.display='inline-block'; }
         else{ badge.style.display='none'; }
       }catch(_e){
-        // si falla la API, ocultamos el badge
-        const badge = document.getElementById('cart-count');
         if (badge) badge.style.display='none';
       }
     }
 
-    // ---------- Logout ----------
-    async function logout(){
+    // ---------- Crear/Renovar sesión Django desde Token (para admin/manage/…) ----------
+    async function ensureDjangoSessionFromToken(){
+      if (!GAON_AUTH.hasToken()) return;
       try{
-        await fetch('/api/auth/token/logout/', {method:'POST', headers:{...authHeader()}});
-      }catch(_e){}
-      clearToken();
-      setupNav();
-      await refreshCartCount();
-      showToast('Sesión cerrada');
-      location.href='/products/';
+        await fetch('/api/auth/session/', {
+          method: 'POST',
+          headers: { ...GAON_AUTH.authHeader() }, // Authorization: Token xxx
+          credentials: 'same-origin'
+        });
+      }catch(_){}
     }
 
-    document.addEventListener('DOMContentLoaded', ()=>{
-      // Inicializar navbar y badge
+    // ---------- NUEVO: Alinear si hay sesión sin token (estado partido) ----------
+    async function alignAuthState(){
+      if (hasToken()) return; // si hay token, no forzamos nada
+      try{
+        // Probamos “me” sin header de token; si responde OK, hay sesión de Django viva
+        const r = await fetch('/api/auth/me/', { credentials:'same-origin' });
+        if (r.ok){
+          // Hay sesión pero no token => cerramos sesión Django y dejamos todo en guest
+          await fetch('/accounts/logout/', { credentials:'same-origin' });
+        }
+      }catch(_){}
+    }
+
+    // ---------- Logout ----------
+    async function logout(){
+      try{ await fetch('/api/auth/token/logout/', {method:'POST', headers:{...authHeader()}}); }catch(_){}
+      clearToken();
+      // cerramos sesión de Django por GET y volvemos a /
+      window.location.href = '/accounts/logout/?next=/';
+    }
+
+    document.addEventListener('DOMContentLoaded', async ()=>{
+      // 1) Si hay token, levantamos/renovamos la cookie de sesión
+      await ensureDjangoSessionFromToken();
       setupNav();
       refreshCartCount();
 
-      // Redirección si ya está logueado y cae en login/signup
+      // 2) Si NO hay token pero el server cree que sí, alineamos (logout de sesión)
+      await alignAuthState();
+
+      // 3) Redirección de conveniencia al estar logueada
       const p = location.pathname;
       if (hasToken() && (p === '/' || p === '/login/' || p === '/signup/')) {
-        location.replace('/account/');
+        location.replace('/products/'); // ← ahora te lleva a Productos
       }
 
-      // Bind de logout
+      // 4) Bind de logout
       const btnLogout = document.getElementById('logout');
       if (btnLogout){
-        btnLogout.addEventListener('click', (e)=>{ e.preventDefault(); logout(); });
+        btnLogout.addEventListener('click', (e)=>{
+          e.preventDefault();
+          logout();
+        });
       }
     });
 
-    // Exponer utilidades globales si se quieren usar en otras páginas
+    // Exponer helpers globales
     window.GAON_AUTH = { hasToken, setToken, clearToken, authHeader };
     window.GAON_CART = { refresh: refreshCartCount };
     window.GAON_UI   = { toast: showToast };
   </script>
+
 </body>
 </html>

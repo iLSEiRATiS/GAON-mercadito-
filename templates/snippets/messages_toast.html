@@ -1,0 +1,9 @@
+{% if messages %}
+<script>
+document.addEventListener('DOMContentLoaded', ()=>{
+  {% for m in messages %}
+  window.GAON_UI?.toast({{ m|escapejs }});
+  {% endfor %}
+});
+</script>
+{% endif %}

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Eliminar producto</h1>
+<div class="card pad" style="max-width:720px">
+  <p>¿Seguro que querés borrar <strong>{{ obj.nombre }}</strong>?</p>
+  <form method="post">
+    {% csrf_token %}
+    <div class="row" style="gap:8px;margin-top:8px">
+      <button class="btn" type="submit">Sí, borrar</button>
+      <a href="/products/manage/" class="btn outline">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

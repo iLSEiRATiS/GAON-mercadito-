@@ -24,6 +24,14 @@
       <input id="qty" type="number" min="1" value="1" style="width:90px">
       <button class="btn" onclick="add()">Agregar al carrito</button>
       <a class="btn outline" href="/cart/">Ver carrito</a>
+      {% if request.user.is_authenticated %}
+        {% if request.user.is_staff or p.user_id == request.user.id %}
+          <div class="row" style="gap:8px;margin-top:10px">
+            <a class="btn outline" href="/products/manage/{{ p.id }}/edit/">Editar</a>
+            <a class="btn outline" href="/products/manage/{{ p.id }}/delete/">Borrar</a>
+          </div>
+        {% endif %}
+      {% endif %}
     </div>
   </div>
 </div>
