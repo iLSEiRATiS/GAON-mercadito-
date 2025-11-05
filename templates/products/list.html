@@ -31,7 +31,19 @@
   {% for p in page_obj %}
   <div class="card">
     <a href="/products/{{ p.id }}/">
-      {% if p.imagen %}<img src="{{ p.imagen.url }}" alt="{{ p.nombre }}">{% else %}<img src="https://via.placeholder.com/600x400?text=GAON" alt="{{ p.nombre }}">{% endif %}
+      <div class="imgbox">
+        {% if p.imagen %}
+          <img src="{{ p.imagen.url }}" alt="{{ p.nombre }}">
+        {% else %}
+          <div class="ph" aria-label="Sin imagen">
+            <!-- Ícono simple -->
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm0 2v9.586l-3.293-3.293a1 1 0 0 0-1.414 0L10 15.586l-2.293-2.293a1 1 0 0 0-1.414 0L5 14.586V5h14ZM5 19v-2.586l2.293-2.293 2.293 2.293a1 1 0 0 0 1.414 0L15.586 12 19 15.414V19H5Zm4-9a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
+            </svg>
+            <small>Sin imagen</small>
+          </div>
+        {% endif %}
+      </div>
     </a>
     <div class="pad">
       <div class="row" style="justify-content:space-between">
@@ -43,6 +55,11 @@
       <div class="row" style="margin-top:10px">
         <button class="btn add" data-id="{{ p.id }}">Agregar</button>
         <a class="btn outline" href="/products/{{ p.id }}/">Ver</a>
+        {% if request.user.is_authenticated %}
+          {% if request.user.is_staff or p.user_id == request.user.id %}
+            <a class="btn outline" href="/products/manage/{{ p.id }}/edit/">Editar</a>
+          {% endif %}
+        {% endif %}
       </div>
     </div>
   </div>
@@ -73,8 +90,8 @@ async function addToCart(id,qty){
   const total = (data && typeof data.total_qty!=='undefined')
     ? Number(data.total_qty||0)
     : (Array.isArray(data.items)?data.items.reduce((a,b)=>a+Number(b.qty||0),0):0);
-  updateCartBadge(total);
-  alert('Agregado al carrito');
+  await window.GAON_CART?.refresh?.();
+  window.GAON_UI?.toast('Agregado al carrito');
 }
 document.querySelectorAll('.add').forEach(b=>b.addEventListener('click',()=>addToCart(Number(b.dataset.id),1)));
 </script>

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+{% include "snippets/messages_toast.html" %}
+<h1>{% if mode == "edit" %}Editar{% else %}Nueva{% endif %} categoría</h1>
+
+<form method="post" class="card pad" style="display:grid;gap:10px;max-width:520px">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <div class="row" style="gap:8px">
+    <button class="btn" type="submit">Guardar</button>
+    <a class="btn outline" href="/categories/manage/">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

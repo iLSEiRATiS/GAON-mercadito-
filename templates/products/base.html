@@ -37,6 +37,21 @@
       </div>
     </div>
   </header>
+  {% if request.user.is_authenticated %}
+    <div style="background:#fff;border-bottom:1px solid #eaeaea">
+      <div class="wrap" style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 12px">
+        <a class="btn outline" href="/products/">Ver productos</a>
+        <a class="btn outline" href="/products/manage/mine/">Mis productos</a>
+        <a class="btn" href="/products/manage/new/">Nuevo producto</a>
+
+        {% if request.user.is_staff %}
+          <span style="flex:1"></span>
+          <a class="btn outline" href="/products/manage/">Gestionar todos</a>
+          <a class="btn outline" href="/categories/manage/">Categorías</a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
   <main class="wrap">
     {% block content %}{% endblock %}
   </main>

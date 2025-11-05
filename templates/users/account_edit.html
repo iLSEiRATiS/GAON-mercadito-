@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Editar perfil</h1>
+
+<form method="post" class="card pad" style="max-width:640px">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+
+  <div style="display:grid;gap:10px">
+    <label>Usuario {{ form.username }}</label>
+    <label>Nombre {{ form.first_name }}</label>
+    <label>Apellido {{ form.last_name }}</label>
+    <label>Email {{ form.email }}</label>
+    <label>Teléfono {{ form.telefono }}</label>
+  </div>
+
+  <div class="row" style="gap:8px;margin-top:12px">
+    <button class="btn" type="submit">Guardar</button>
+    <a class="btn outline" href="/account/">Cancelar</a>
+  </div>
+</form>
+
+<div class="card pad" style="max-width:640px;margin-top:12px">
+  <div class="row" style="gap:8px;flex-wrap:wrap">
+    <a class="btn outline" href="/accounts/password/change/">Cambiar contraseña</a>
+    <a class="btn outline" href="/accounts/email/">Gestionar emails</a>
+  </div>
+</div>
+
+<script>
+function getCsrf(){
+  const name='csrftoken=';
+  const c = document.cookie.split(';').map(s=>s.trim()).find(s=>s.startsWith(name));
+  return c ? c.slice(name.length) : '';
+}
+
+(async function init(){
+  // 1) Precargar datos
+  try{
+    const r = await fetch('/api/auth/me/', { headers: { ...GAON_AUTH.authHeader() }});
+    const data = await r.json();
+    if(!r.ok) throw new Error(data?.detail || 'No autorizado');
+
+    // Setear valores del form
+    const $ = s => document.querySelector(s);
+
+    // Email visible pero NO editable
+    const emailInput = $('input[name="email"]');
+    if (emailInput) {
+      emailInput.value = data.email || '';
+      emailInput.placeholder = data.email || 'tu@email.com';
+      emailInput.readOnly = true;
+      emailInput.setAttribute('aria-readonly','true');
+      emailInput.style.background = '#f5f5f5';
+    }
+
+    const u = $('input[name="username"]');
+    if (u) u.value = data.username || '';
+
+    const fn = $('input[name="first_name"]');
+    if (fn) fn.value = data.first_name || '';
+
+    const ln = $('input[name="last_name"]');
+    if (ln) ln.value = data.last_name || '';
+
+    const tel = $('input[name="telefono"]');
+    if (tel) tel.value = data.telefono || '';
+
+  }catch(e){
+    GAON_UI?.toast?.('No pudimos cargar tus datos', 'err', String(e?.message || e));
+  }
+
+  // 2) Envío PATCH (username/first_name/last_name/telefono)
+  const F = document.getElementById('account-edit-form') || document.querySelector('form');
+  if (!F) return;
+
+  F.addEventListener('submit', async (ev)=>{
+    ev.preventDefault();
+
+    const fd = new FormData(F);
+    const payload = {
+      username: fd.get('username') || '',
+      first_name: fd.get('first_name') || '',
+      last_name: fd.get('last_name') || '',
+      telefono: fd.get('telefono') || ''
+      // email NO se envía; queda fijo
+    };
+
+    try{
+      const r = await fetch('/api/auth/me/update/', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type':'application/json',
+          'X-CSRFToken': getCsrf(),
+          ...GAON_AUTH.authHeader()
+        },
+        body: JSON.stringify(payload),
+        credentials: 'same-origin'
+      });
+
+      const data = await r.json().catch(()=> ({}));
+      if(!r.ok) throw new Error(data?.detail || 'No se pudo guardar');
+
+      GAON_UI?.toast?.('Perfil actualizado');
+      // Opcional: volver a Mi cuenta
+      setTimeout(()=> location.href='/account/', 600);
+    }catch(e){
+      GAON_UI?.toast?.('Error al actualizar', 'err', String(e?.message || e));
+    }
+  });
+})();
+</script>
+
+{% endblock %}

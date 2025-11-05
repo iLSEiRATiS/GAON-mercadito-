@@ -1,15 +1,21 @@
 from django.db import models
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, filters
 from rest_framework.request import Request
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from products.models import Product, Category
 from .serializers import ProductSerializer, CategorySerializer
+from rest_framework.pagination import PageNumberPagination
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return True
-        return obj.user_id == getattr(request.user, 'id', None)
+        return obj.user_id == (request.user.id if request.user and request.user.is_authenticated else None)
+
+class SmallPagination(PageNumberPagination):
+    page_size = 12
+    page_size_query_param = "page_size"
+    max_page_size = 100
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.order_by('nombre')
@@ -27,12 +33,21 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     ]
 )
 class ProductViewSet(viewsets.ModelViewSet):
+    queryset = Product.objects.all().order_by("-creado_en")
     serializer_class = ProductSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+    pagination_class = SmallPagination
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["nombre", "descripcion", "category__nombre"]
+    ordering_fields = ["creado_en", "precio", "nombre"]
 
     def get_queryset(self):
-        request: Request = self.request
+        request = self.request
         qs = Product.objects.filter(activo=True)
+
+        # 👇 filtro “mis productos”
+        if (request.query_params.get('mine') in ('1', 'true')) and request.user.is_authenticated:
+            qs = qs.filter(user=request.user)
 
         q = request.query_params.get('q') or ''
         if q:
@@ -68,6 +83,8 @@ class ProductViewSet(viewsets.ModelViewSet):
             qs = qs.order_by('-creado_en')
 
         return qs
+
+
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
