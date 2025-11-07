@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Nosotros — GAON Mercadito{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<section style="margin:8px 0 18px">
+  <div class="card" style="overflow:hidden">
+    <div class="imgbox" style="height:280px">
+      <img src="{% static 'home/hero2.jpg' %}" alt="Nosotros GAON" />
+    </div>
+    <div class="pad">
+      <h1 style="margin:0 0 6px">Nosotros</h1>
+      <p style="margin:0;color:#6b7280">
+        En <strong>GAON Mercadito</strong> impulsamos un marketplace simple y cercano para que puedas
+        <em>comprar</em> y <em>vender</em> moda con confianza, desde cualquier lugar del país.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Misión / Visión -->
+<section class="grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); margin:18px 0">
+  <article class="card pad">
+    <h3 style="margin:0 0 6px">Nuestra misión</h3>
+    <p style="margin:0;color:#6b7280">
+      Hacer que la experiencia de compra y venta de indumentaria sea ágil, segura y transparente.
+    </p>
+  </article>
+  <article class="card pad">
+    <h3 style="margin:0 0 6px">Nuestra visión</h3>
+    <p style="margin:0;color:#6b7280">
+      Construir una comunidad que conecte marcas emergentes y clientes a través de productos de calidad.
+    </p>
+  </article>
+  <article class="card pad">
+    <h3 style="margin:0 0 6px">Cómo trabajamos</h3>
+    <p style="margin:0;color:#6b7280">
+      Curamos catálogos, facilitamos pagos con Mercado Pago y ofrecemos soporte cercano por WhatsApp/IG.
+    </p>
+  </article>
+</section>
+
+<!-- Valores -->
+<section>
+  <h2 style="margin:0 0 12px">Nuestros valores</h2>
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));">
+    <div class="card pad">
+      <h4 style="margin:0 0 6px">Transparencia</h4>
+      <p style="margin:0;color:#6b7280">Precios claros, políticas simples y comunicación honesta.</p>
+    </div>
+    <div class="card pad">
+      <h4 style="margin:0 0 6px">Calidad</h4>
+      <p style="margin:0;color:#6b7280">Seleccionamos productos que se sienten y se ven bien.</p>
+    </div>
+    <div class="card pad">
+      <h4 style="margin:0 0 6px">Cercanía</h4>
+      <p style="margin:0;color:#6b7280">Atención humana y resolutiva: te acompañamos en todo el proceso.</p>
+    </div>
+    <div class="card pad">
+      <h4 style="margin:0 0 6px">Confianza</h4>
+      <p style="margin:0;color:#6b7280">Pagos seguros y soporte posventa para que compres sin preocupaciones.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="card pad" style="margin:24px 0; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+  <div>
+    <h3 style="margin:0 0 6px">Conocé nuestro catálogo</h3>
+    <p style="margin:0;color:#6b7280">Descubrí ofertas, básicos y colecciones urbanas.</p>
+  </div>
+  <div style="display:flex; gap:8px; flex-wrap:wrap">
+    <a class="btn" href="/products/">Ver productos</a>
+    <a class="btn outline" href="/signup/">Crear cuenta</a>
+  </div>
+</section>
+
+{% endblock %}

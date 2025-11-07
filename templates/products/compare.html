@@ -1,0 +1,60 @@
+<!-- templates/products/compare.html -->
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Comparar precios</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{% static 'styles.css' %}" rel="stylesheet">
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; }
+    .container { max-width: 920px; margin: 0 auto; }
+    form { display: flex; gap: 8px; margin-bottom: 16px; }
+    input[type="text"] { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
+    button { padding: 10px 14px; border: 0; border-radius: 8px; background: #111827; color: #fff; cursor: pointer; }
+    button:hover { opacity: .9; }
+    .msg { margin: 10px 0; color: #4b5563; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
+    .muted { color: #6b7280; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Comparar precios</h1>
+
+    <form method="get" action="">
+      <input type="text" name="q" placeholder="Buscar producto..." value="{{ query|default:'' }}">
+      <button type="submit">Buscar</button>
+    </form>
+
+    {% if msg %}<div class="msg">{{ msg }}</div>{% endif %}
+
+    {% if results %}
+      <table>
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Precio</th>
+            <th>Tienda</th>
+            <th>Link</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in results %}
+          <tr>
+            <td>{{ r.name }}</td>
+            <td>{{ r.price }}</td>
+            <td>{{ r.store }}</td>
+            <td><a href="{{ r.url }}" target="_blank" rel="noopener">Ver</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="muted">No hay resultados para mostrar.</p>
+    {% endif %}
+  </div>
+</body>
+</html>
