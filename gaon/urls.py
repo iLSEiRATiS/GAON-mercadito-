@@ -76,7 +76,7 @@ urlpatterns = [
     path("social/bridge/", social_bridge, name="social-bridge"),
 
     # API del chatbot (Gemini)
-    path("api/chat/", include(("chatbot.api.urls", "chatbot_api"), namespace="chatbot_api")),
+    path("api/chat/", include("chat.urls")),
 
     # Comparador de precios (HTML)
     path("comparar/", compare_prices_view, name="compare-prices"),

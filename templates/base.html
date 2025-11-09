@@ -210,27 +210,35 @@
   <div id="toast"></div>
 
   <!-- ====== Widget de Chat (flotante) ====== -->
-  <button class="chat-fab" id="chat-fab" aria-label="Abrir chat">
-    <!-- ícono burbuja -->
-    <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true">
-      <path d="M20 2H4a2 2 0 0 0-2 2v17.6a.4.4 0 0 0 .64.32L7 18h13a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Z"/>
-    </svg>
-  </button>
+  <div id="chat-fab" style="
+    position: fixed; right: 20px; bottom: 20px;
+    width: 64px; height: 64px; border-radius: 50%;
+    background: var(--a, #0ea5a5); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; cursor: pointer; z-index: 9999;
+    box-shadow: 0 4px 16px rgba(0,0,0,.25);
+  ">💬</div>
 
-  <section class="chat-panel" id="chat-panel" aria-live="polite">
-    <div class="chat-head">
-      <div class="chat-title">Asistente GAON</div>
-      <button class="chat-close" id="chat-close" title="Cerrar">✕</button>
+  <div id="chat-box" style="
+    position: fixed; right: 20px; bottom: 100px;
+    width: 340px; max-height: 480px;
+    background: #fff; border: 1px solid var(--border, #e5e7eb);
+    border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.15);
+    display: none; flex-direction: column; overflow: hidden; z-index: 9999;
+  ">
+    <div style="background: var(--a,#0ea5a5); color:#fff; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">
+      <strong>Asistente GAON</strong>
+      <button id="chat-close" style="background:none;border:0;color:#fff;font-size:20px;cursor:pointer;">×</button>
     </div>
-    <div class="chat-body" id="chat-body">
-      <div class="msg bot">¡Hola! Soy el asistente. ¿En qué te ayudo?</div>
-    </div>
-    <div class="chat-foot">
-      <input id="chat-input" class="chat-input" type="text" placeholder="Escribí tu consulta y presioná Enter...">
-      <button id="chat-send" class="btn chat-send">Enviar</button>
-    </div>
-    <div class="chat-hint">Usa palabras simples. No compartas datos sensibles.</div>
-  </section>
+
+    <div id="chat-messages" style="flex:1; padding:10px; overflow-y:auto; font-size:14px;"></div>
+
+    <form id="chat-form" style="display:flex; border-top:1px solid #eee;">
+      <input id="chat-input" type="text" placeholder="Escribe un mensaje..." required
+            style="flex:1; border:0; padding:10px; font-size:14px; outline:none;">
+      <button type="submit" style="background:var(--a,#0ea5a5); color:#fff; border:0; padding:0 16px; cursor:pointer;">⮞</button>
+    </form>
+  </div>
 
   <script>
     // ==== helpers existentes ====
@@ -333,62 +341,84 @@
     window.GAON_UI   = { toast: showToast };
 
     // ==== LÓGICA DEL CHAT ====
-    (function(){
-      const fab = document.getElementById('chat-fab');
-      const panel = document.getElementById('chat-panel');
-      const closeBtn = document.getElementById('chat-close');
-      const body = document.getElementById('chat-body');
-      const input = document.getElementById('chat-input');
-      const send = document.getElementById('chat-send');
 
-      let pending = false;
-      const history = []; // opcional para mostrar en UI
+    window.CURRENT_USER = "{{ request.user.username|default:'' }}";
 
-      function toggle(open){
-        panel.classList.toggle('open', open ?? !panel.classList.contains('open'));
-        if (panel.classList.contains('open')) input?.focus();
+    const chatFab = document.getElementById('chat-fab');
+    const chatBox = document.getElementById('chat-box');
+    const chatClose = document.getElementById('chat-close');
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const chatMsgs = document.getElementById('chat-messages');
+
+    chatFab.onclick = ()=>{ chatBox.style.display = 'flex'; chatFab.style.display='none'; loadChat(); };
+    chatClose.onclick = ()=>{ chatBox.style.display = 'none'; chatFab.style.display='flex'; };
+
+    async function loadChat(){
+      chatMsgs.innerHTML = '<div style="text-align:center;color:#999">Cargando...</div>';
+      try{
+        const r = await fetch('/api/chat/', { credentials:'same-origin', headers: { ...GAON_AUTH?.authHeader?.() }});
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        const msgs = await r.json();
+        renderChat(msgs);
+      }catch(e){
+        chatMsgs.innerHTML = `<div style="color:#b91c1c;text-align:center">Error al cargar chat<br>${e.message}</div>`;
       }
-      fab?.addEventListener('click', ()=>toggle(true));
-      closeBtn?.addEventListener('click', ()=>toggle(false));
+    }
 
-      function addMsg(text, who='bot'){
+    function renderChat(msgs){
+      chatMsgs.innerHTML = '';
+      msgs.forEach(m=>{
         const div = document.createElement('div');
-        div.className = 'msg ' + (who === 'user' ? 'user' : 'bot');
-        div.textContent = text;
-        body.appendChild(div);
-        body.scrollTop = body.scrollHeight;
-      }
-
-      async function ask(){
-        if (pending) return;
-        const q = (input.value || "").trim();
-        if (!q) return;
-        input.value = "";
-        addMsg(q, 'user');
-        history.push({role:'user', content:q});
-
-        pending = true;
-        try{
-          const r = await fetch('/api/chat/', {
-            method:'POST',
-            headers:{'Content-Type':'application/json','X-CSRFToken':getCsrf()},
-            body: JSON.stringify({ messages: history.slice(-10) }) // mandamos las últimas
-          });
-          const data = await r.json();
-          if(!r.ok) throw new Error(data?.detail || `HTTP ${r.status}`);
-          const reply = data?.reply || '(sin respuesta)';
-          history.push({role:'assistant', content: reply});
-          addMsg(reply, 'bot');
-        }catch(e){
-          addMsg('Ups, no pude responder ahora. ' + e.message, 'bot');
-        }finally{
-          pending = false;
+        div.style.margin = '8px 0';
+        div.style.padding = '6px 10px';
+        div.style.borderRadius = '10px';
+        div.style.maxWidth = '80%';
+        if(m.username === window.CURRENT_USER){
+          div.style.background = '#dcfce7';
+          div.style.alignSelf = 'flex-end';
+        } else {
+          div.style.background = '#f1f5f9';
         }
-      }
+        div.textContent = m.texto;
+        chatMsgs.appendChild(div);
+      });
+      chatMsgs.scrollTop = chatMsgs.scrollHeight;
+    }
 
-      send?.addEventListener('click', ask);
-      input?.addEventListener('keydown', (ev)=>{ if(ev.key==='Enter'){ ev.preventDefault(); ask(); } });
-    })();
+    chatForm.addEventListener('submit', async (ev)=>{
+      ev.preventDefault();
+      const texto = chatInput.value.trim();
+      if(!texto) return;
+      chatInput.value = '';
+
+      // Pinta el mensaje del usuario inmediatamente (optimista)
+      const bubble = document.createElement('div');
+      bubble.style.margin = '8px 0';
+      bubble.style.padding = '6px 10px';
+      bubble.style.borderRadius = '10px';
+      bubble.style.maxWidth = '80%';
+      bubble.style.background = '#dcfce7';
+      bubble.style.alignSelf = 'flex-end';
+      bubble.textContent = texto;
+      chatMsgs.appendChild(bubble);
+      chatMsgs.scrollTop = chatMsgs.scrollHeight;
+
+      try{
+        const r = await fetch('/api/chat/', {
+          method:'POST',
+          headers:{'Content-Type':'application/json', ...(window.GAON_AUTH?.authHeader?.()||{})},
+          credentials:'same-origin',
+          body: JSON.stringify({texto})
+        });
+        if(!r.ok) throw new Error('Error '+r.status);
+
+        // 🔁 Refrescá la conversación para traer la respuesta del bot guardada en DB
+        await loadChat();
+      }catch(e){
+        GAON_UI?.toast?.('No se pudo enviar el mensaje','err',e.message);
+      }
+    });
   </script>
 </body>
 </html>
