@@ -1,21 +1,30 @@
 {% extends "base.html" %}
+{% block title %}Mi cuenta — GAON{% endblock %}
+
 {% block content %}
-<h1>Mi cuenta</h1>
-<div id="card" class="card pad" style="max-width:720px"></div>
+<section class="section">
+  <h1 style="margin:0 0 10px">Mi cuenta</h1>
 
-<h2 style="margin-top:24px">Mis productos</h2>
-<div id="my-products" class="grid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px"></div>
-<div id="my-actions" class="row" style="gap:8px;margin-top:10px;display:none">
-  <a class="btn" href="/products/manage/new/">Crear producto</a>
-  <a id="btn-manage" class="btn outline" href="/products/manage/" style="display:none">Ver todos (gestión)</a>
-</div>
+  <div id="card" class="card pad" style="max-width:760px"></div>
 
-<h2 style="margin-top:24px">Mis pedidos</h2>
-<p>Próximamente: aquí listaremos tus órdenes (Semana 10).</p>
+  <h2 style="margin:22px 0 10px">Mis productos</h2>
+  <div id="my-products" class="grid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px"></div>
+
+  <div id="my-actions" class="row" style="gap:8px;margin-top:10px;display:none">
+    <a class="btn" href="/products/manage/new/">Crear producto</a>
+    <a id="btn-manage" class="btn outline" href="/products/manage/" style="display:none">Ver todos (gestión)</a>
+  </div>
+
+  <h2 style="margin:22px 0 10px">Mis pedidos</h2>
+  <div class="card pad text-muted">Próximamente: aquí listaremos tus órdenes.</div>
+</section>
 
 <script>
 (function(){
+  const PH = '/static/img/placeholder.png';
   const card = document.getElementById('card');
+  const root = document.getElementById('my-products');
+  const actions = document.getElementById('my-actions');
 
   function needLogin(){
     card.innerHTML = `
@@ -27,10 +36,7 @@
   }
 
   async function loadMyProducts(){
-    const root    = document.getElementById('my-products');
-    const actions = document.getElementById('my-actions');
     if (!root) return;
-
     try{
       const r = await fetch('/api/products/?mine=1', {
         headers: { ...(window.GAON_AUTH?.authHeader?.()||{}) },
@@ -45,8 +51,6 @@
         return;
       }
 
-      const PH = '/static/img/placeholder.png'; // <-- asegurate que exista
-
       root.innerHTML = items.map(p=>{
         const img    = p.imagen_url || PH;
         const nombre = p.nombre || 'Producto';
@@ -54,11 +58,11 @@
         const fecha  = (p.creado_en||'').slice(0,10);
         return `
           <div class="card">
-            <div class="imgbox"><img src="${img}" alt="${nombre}" onerror="this.src='${PH}'"></div>
+            <div class="imgbox" style="height:200px"><img src="${img}" alt="${nombre}" onerror="this.src='${PH}'"></div>
             <div class="pad">
               <div class="row" style="justify-content:space-between">
                 <div class="price">${Number.isFinite(precio) ? precio.toLocaleString('es-AR',{style:'currency',currency:'ARS'}) : '-'}</div>
-                <small>${fecha}</small>
+                <small class="text-muted">${fecha}</small>
               </div>
               <h3 style="margin:.4rem 0">${nombre}</h3>
               <div class="row" style="gap:8px;flex-wrap:wrap">
@@ -72,7 +76,6 @@
 
       if (actions) actions.style.display = 'flex';
     }catch(err){
-      console.error('[Mis productos] error:', err);
       root.innerHTML = `<div class="card pad">No pudimos cargar tus productos.</div>`;
       if (actions) actions.style.display = 'flex';
     }
@@ -80,18 +83,15 @@
 
   async function start(){
     if(!window.GAON_AUTH?.hasToken?.()){ needLogin(); return; }
-
-    // 1) Traer perfil una sola vez
     const r = await fetch('/api/auth/me/', { headers: { ...GAON_AUTH.authHeader() }});
     const data = await r.json();
     if (!r.ok) { needLogin(); return; }
 
-    // 2) Pintar tarjeta
     card.innerHTML = `
-      <div class="row" style="justify-content:space-between">
+      <div class="row" style="justify-content:space-between; gap:8px; flex-wrap:wrap">
         <div>
           <strong>${data.first_name||''} ${data.last_name||''}</strong><br>
-          <small>${data.email||''}</small>
+          <small class="text-muted">${data.email||''}</small>
         </div>
       </div>
       <hr style="margin:12px 0">
@@ -105,25 +105,18 @@
       </div>
     `;
 
-    // 3) Mostrar acciones y, si corresponde, el botón de gestión
-    const actions = document.getElementById('my-actions');
     if (actions) actions.style.display = 'flex';
     const isStaff = !!data.is_staff || !!data.is_superuser || /^(staff|admin)$/i.test(String(data.rol||''));
     const btnManage = document.getElementById('btn-manage');
     if (btnManage) btnManage.style.display = isStaff ? '' : 'none';
 
-    // 4) Cargar Mis productos
     await loadMyProducts();
   }
 
   document.addEventListener('DOMContentLoaded', ()=>{
-    // Esperamos a que GAON_AUTH esté disponible (lo define base.html)
     if (window.GAON_AUTH) return start();
-    const iv = setInterval(()=>{
-      if (window.GAON_AUTH){ clearInterval(iv); start(); }
-    }, 50);
+    const iv = setInterval(()=>{ if (window.GAON_AUTH){ clearInterval(iv); start(); } }, 50);
   });
 })();
 </script>
-
 {% endblock %}

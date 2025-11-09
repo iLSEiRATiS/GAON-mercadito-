@@ -2,169 +2,330 @@
 <html lang="es">
 {% load static %}
 <head>
-  <meta charset="utf-8">
-  <title>GAON</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <title>{% block title %}GAON{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Favicon / Logo -->
-  <link rel="icon" href="{% static 'gaon.ico' %}" sizes="any">
-  <link rel="shortcut icon" href="{% static 'gaon.ico' %}">
+  <link rel="icon" href="{% static 'gaon.ico' %}" sizes="any" />
+  <link rel="shortcut icon" href="{% static 'gaon.ico' %}" />
 
   <style>
-    :root{--c:#111;--a:#0a7;--b:#eee;--err:#c0392b;--ok:#16a085}
-    *{box-sizing:border-box}body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial}
-    header{background:#fff;border-bottom:1px solid #ddd;position:sticky;top:0;z-index:10}
-    .wrap{max-width:1100px;margin:0 auto;padding:12px}
-    .row{display:flex;gap:10px;align-items:center}
-    a{color:inherit;text-decoration:none}
-    nav a{padding:8px 10px;border-radius:10px}
-    nav a:hover{background:#f5f5f5}
-    .btn{background:var(--a);color:#fff;border:0;border-radius:10px;padding:10px 14px;cursor:pointer}
-    .btn.outline{background:#fff;color:var(--a);border:1px solid var(--a)}
+    :root{
+      --fg:#0b2239;
+      --muted:#5b6b7a;
+      --border:#e6eef7;
+      --card:#ffffff;
+
+      /* paleta celeste/azul pastel */
+      --bg:#f4f9ff;
+      --brand:#3aa7ff;
+      --brand-600:#1f8fe7;
+      --brand-50:#eaf5ff;
+
+      --ok:#16a085; --err:#c0392b;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: system-ui,Segoe UI,Roboto,Arial; color:var(--fg);
+      display:flex; flex-direction:column; min-height:100vh; background:var(--bg);
+    }
+
+    header{ background:#fff; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:50; }
+    .wrap{max-width:1100px; margin:0 auto; padding:12px}
+    .row{display:flex; align-items:center; gap:10px}
+    a{color:inherit; text-decoration:none}
+    a:hover{opacity:.95}
+
+    .brand{gap:8px}
+    .brand img{width:28px;height:28px;display:block}
+    .nav{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+    .nav a{ padding:8px 10px; border-radius:10px; white-space:nowrap; }
+    .nav a:hover{background:var(--brand-50)}
+    .nav .active{background:var(--brand-50); color:var(--brand-600)}
+
+    .cart-link{position:relative; display:inline-flex; align-items:center; gap:6px; padding:6px 8px; border-radius:10px}
+    .cart-link svg{width:22px;height:22px; display:block}
+    .badge{
+      position:absolute; top:-6px; right:-6px; min-width:20px; height:20px; line-height:20px;
+      border-radius:10px; background:var(--brand); color:#fff; font-size:12px; text-align:center; padding:0 6px; display:none;
+      box-shadow:0 1px 0 rgba(0,0,0,.08);
+    }
+
+    .nav-toggle{ display:none; border:1px solid var(--border); background:#fff; border-radius:10px; padding:8px 10px; cursor:pointer; }
+    .nav-toggle svg{width:20px;height:20px}
+
+    .nav-wrap{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .drawer{ display:flex; gap:8px; align-items:center; }
+    @media (max-width: 860px){
+      .drawer{
+        position:fixed; inset:64px 16px auto 16px; background:#fff; border:1px solid var(--border);
+        border-radius:12px; padding:10px; box-shadow:0 12px 30px rgba(0,0,0,.08);
+        display:none; flex-direction:column; align-items:stretch; gap:6px;
+      }
+      .drawer.open{display:flex}
+      .nav-toggle{display:inline-flex}
+      .nav{flex-direction:column; align-items:stretch}
+      .nav a{padding:10px 12px}
+      .cart-link{align-self:flex-start}
+    }
+
+    .btn{background:var(--brand); color:#fff; border:0; border-radius:10px; padding:10px 14px; cursor:pointer}
+    .btn:hover{filter:brightness(0.98)}
+    .btn.outline{background:#fff;color:var(--brand-600);border:1px solid var(--brand-600)}
+    input,select,textarea{padding:10px;border:1px solid var(--border);border-radius:10px;background:#fff}
+
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin:16px 0}
-    .card{background:#fff;border:1px solid #e8e8e8;border-radius:16px;overflow:hidden}
-    .card img{width:100%;height:180px;object-fit:cover;background:#fafafa}
+    .card{background:var(--card); border:1px solid var(--border); border-radius:16px; overflow:hidden; box-shadow:0 8px 24px rgba(28,66,104,.05)}
+    .card img{width:100%; height:180px; object-fit:cover; background:#f8fbff}
     .pad{padding:12px}
-    .search{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
-    input,select{padding:10px;border:1px solid #ddd;border-radius:10px}
-    main{min-height:60vh;background:var(--b)}
     .price{font-weight:700}
-    footer{border-top:1px solid #ddd;background:#fff}
-    .badge{display:inline-block;min-width:20px;height:20px;border-radius:10px;line-height:20px;text-align:center;font-size:12px;background:var(--a);color:#fff;margin-left:6px;padding:0 6px}
-    #toast{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:9999}
-    .toast{background:#fff;border-left:6px solid var(--ok);border:1px solid #ddd;box-shadow:0 6px 20px rgba(0,0,0,.1);border-radius:8px;padding:10px 12px;min-width:240px}
+
+    main{flex:1; display:block}
+    main > .wrap{padding:16px}
+    footer{border-top:1px solid var(--border); background:#fff}
+    footer .wrap{padding:16px; color:var(--muted); display:flex; gap:8px; flex-wrap:wrap; justify-content:space-between}
+    .foot-left, .foot-right{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
+
+    #toast{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:9000}
+    .toast{background:#fff;border-left:6px solid var(--ok);border:1px solid var(--border);box-shadow:0 6px 20px rgba(0,0,0,.1);border-radius:8px;padding:10px 12px;min-width:240px}
     .toast.err{border-left-color:var(--err)}
     .toast small{display:block;color:#666}
-    /* Caja de imagen fija (evita que el texto suba) */
-    .imgbox{width:100%;height:180px;background:#f3f4f6;display:flex;align-items:center;justify-content:center}
+
+    .imgbox{width:100%;height:180px;background:#f3f7fb;display:flex;align-items:center;justify-content:center}
     .imgbox img{width:100%;height:100%;object-fit:cover;display:block}
     .imgbox .ph{display:flex;flex-direction:column;align-items:center;gap:6px;color:#9aa0a6}
     .imgbox .ph svg{width:36px;height:36px;opacity:.7}
+
+    /* ====== Widget de Chat flotante ====== */
+    .chat-fab{
+      position:fixed; right:18px; bottom:18px; z-index:9500;
+      width:56px; height:56px; border-radius:50%;
+      display:grid; place-items:center; cursor:pointer;
+      background:linear-gradient(135deg, var(--brand), #7ac6ff);
+      color:#fff; box-shadow:0 10px 24px rgba(58,167,255,.35);
+      border:0;
+    }
+    .chat-fab:hover{ transform:translateY(-1px); }
+
+    .chat-panel{
+      position:fixed; right:18px; bottom:86px; z-index:9500;
+      width:min(90vw, 340px); max-height:70vh;
+      display:none; flex-direction:column; border-radius:16px;
+      background:#ffffff; border:1px solid var(--border);
+      box-shadow:0 16px 36px rgba(28,66,104,.15); overflow:hidden;
+    }
+    .chat-panel.open{ display:flex; }
+
+    .chat-head{
+      background:linear-gradient(135deg, #f7fbff, #eef6ff);
+      border-bottom:1px solid var(--border);
+      padding:10px 12px; display:flex; align-items:center; justify-content:space-between;
+    }
+    .chat-title{ font-weight:700 }
+    .chat-close{ background:transparent; border:0; cursor:pointer; color:#376792 }
+    .chat-body{
+      padding:10px; overflow:auto; display:flex; flex-direction:column; gap:10px;
+      background: #fafcff;
+    }
+    .msg{
+      max-width:90%; padding:10px 12px; border-radius:12px; white-space:pre-wrap;
+      box-shadow:0 6px 16px rgba(28,66,104,.05); border:1px solid var(--border);
+      background:#fff;
+    }
+    .msg.user{ align-self:flex-end; background:#e9f5ff; border-color:#cfe9ff }
+    .msg.bot { align-self:flex-start; }
+    .chat-foot{ display:flex; gap:8px; padding:10px; border-top:1px solid var(--border); background:#fff }
+    .chat-input{ flex:1 }
+    .chat-send{ white-space:nowrap }
+    .chat-hint{ font-size:.8rem; color:var(--muted); padding:0 10px 10px }
   </style>
 </head>
 <body>
   <header>
-    <div class="wrap row" style="justify-content:space-between">
-      <a href="/" class="row" style="gap:8px;align-items:center" aria-label="Inicio GAON">
-        <img src="{% static 'gaon.ico' %}" alt="GAON" style="width:24px;height:24px;display:block">
+    <div class="wrap nav-wrap">
+      <a href="/" class="row brand" aria-label="Inicio GAON">
+        <img src="{% static 'gaon.ico' %}" alt="GAON" />
+        <strong>GAON</strong>
       </a>
 
-      <nav class="row" id="nav-auth">
-        <a href="/products/">Productos</a>
-        {% if request.user.is_authenticated and request.user.is_staff %}
-          <a href="/categories/manage/">Categorías</a>
-        {% endif %}
-        <a href="/cart/">Carrito <span id="cart-count" class="badge" style="display:none">0</span></a>
-        <a href="/login/" data-guest>Login</a>
-        <a href="/signup/" data-guest>Crear cuenta</a>
-        <a href="/account/" id="my-account" data-auth style="display:none">Mi cuenta</a>
-        <a href="/#" id="logout" data-auth style="display:none">Salir</a>
-      </nav>
+      <button class="nav-toggle" id="btn-toggle" aria-label="Abrir menú">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M3 6h18M3 12h18M3 18h18" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+
+      <div class="drawer" id="drawer">
+        <nav class="nav" id="nav-auth" aria-label="Navegación principal">
+          <a href="/products/" data-link>Productos</a>
+          <a href="/about/" data-link>Nosotros</a>
+          {% if request.user.is_authenticated and request.user.is_staff %}
+            <a href="/categories/manage/" data-link>Categorías</a>
+          {% endif %}
+          <a class="nav-link" href="{% url 'compare-prices' %}">Comparar precios</a>
+          
+          <!-- Visible solo para invitados -->
+          <a href="/login/" data-guest data-link>Iniciar sesión</a>
+          <a href="/signup/" data-guest data-link>Registrarse</a>
+
+          <!-- Visible solo para autenticados -->
+          <a href="/account/" id="my-account" data-auth style="display:none" data-link>Mi cuenta</a>
+          <a href="/#" id="logout" data-auth style="display:none" data-link>Salir</a>
+        </nav>
+        </nav>
+
+        <a href="/cart/" class="cart-link" aria-label="Carrito">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+            <path d="M3 3h2l.4 2M7 13h9l3-8H6.4M7 13L5.4 5M7 13l-2 7h14m-9 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm8 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"
+                  stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span id="cart-count" class="badge">0</span>
+        </a>
+      </div>
     </div>
   </header>
 
-  <main><div class="wrap">{% block content %}{% endblock %}</div></main>
-  <footer><div class="wrap">GAON ©</div></footer>
+  <main>
+    <div class="wrap">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <div class="foot-left">
+        <span>GAON © {% now "Y" %}</span>
+        <span>•</span>
+        <a href="/about/">Sobre nosotros</a>
+        <span>•</span>
+        <a href="/products/">Productos</a>
+      </div>
+      <div class="foot-right" style="opacity:.85">
+        <small>Que tu preocupación sea, solo no saber qué comprar.</small>
+      </div>
+    </div>
+  </footer>
 
   <div id="toast"></div>
 
+  <!-- ====== Widget de Chat (flotante) ====== -->
+  <div id="chat-fab" style="
+    position: fixed; right: 20px; bottom: 20px;
+    width: 64px; height: 64px; border-radius: 50%;
+    background: var(--a, #0ea5a5); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; cursor: pointer; z-index: 9999;
+    box-shadow: 0 4px 16px rgba(0,0,0,.25);
+  ">💬</div>
+
+  <div id="chat-box" style="
+    position: fixed; right: 20px; bottom: 100px;
+    width: 340px; max-height: 480px;
+    background: #fff; border: 1px solid var(--border, #e5e7eb);
+    border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.15);
+    display: none; flex-direction: column; overflow: hidden; z-index: 9999;
+  ">
+    <div style="background: var(--a,#0ea5a5); color:#fff; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">
+      <strong>Asistente GAON</strong>
+      <button id="chat-close" style="background:none;border:0;color:#fff;font-size:20px;cursor:pointer;">×</button>
+    </div>
+
+    <div id="chat-messages" style="flex:1; padding:10px; overflow-y:auto; font-size:14px;"></div>
+
+    <form id="chat-form" style="display:flex; border-top:1px solid #eee;">
+      <input id="chat-input" type="text" placeholder="Escribe un mensaje..." required
+            style="flex:1; border:0; padding:10px; font-size:14px; outline:none;">
+      <button type="submit" style="background:var(--a,#0ea5a5); color:#fff; border:0; padding:0 16px; cursor:pointer;">⮞</button>
+    </form>
+  </div>
+
   <script>
-    // ---------- Auth helpers ----------
+    // ==== helpers existentes ====
     const TKEY='gaon_token';
     function hasToken(){ return !!localStorage.getItem(TKEY); }
     function setToken(t){ localStorage.setItem(TKEY, t); }
     function clearToken(){ localStorage.removeItem(TKEY); }
     function authHeader(){ const t=localStorage.getItem(TKEY); return t ? {'Authorization':'Token '+t} : {}; }
-
-    // ---------- Navbar visibility ----------
-    function setupNav(){
-      const authEls=[...document.querySelectorAll('[data-auth]')];
-      const guestEls=[...document.querySelectorAll('[data-guest]')];
-      const logged=hasToken();
-      authEls.forEach(e=>e.style.display = logged ? '' : 'none');
-      guestEls.forEach(e=>e.style.display = logged ? 'none' : '');
-    }
-
-    // ---------- Toasts ----------
-    function showToast(msg, type='ok', sub=''){
-      const wrap = document.getElementById('toast');
-      if(!wrap) return;
-      const div = document.createElement('div');
-      div.className = 'toast'+(type==='err'?' err':'');
-      div.innerHTML = `<div>${msg}</div>${sub?`<small>${sub}</small>`:''}`;
-      wrap.appendChild(div);
-      setTimeout(()=>{ div.remove(); }, 3500);
-    }
-
-    // ---------- Cart badge ----------
-    async function refreshCartCount(){
-      const badge = document.getElementById('cart-count');
-      if(!badge) return;
+    async function hasSession(){
       try{
-        const r = await fetch('/api/cart/');
-        if(!r.ok) throw new Error('HTTP '+r.status);
-        const data = await r.json().catch(()=>({items:[]}));
-        const items = Array.isArray(data.items) ? data.items : [];
-        const n = items.reduce((acc,it)=>{
-          const q = Number(it?.qty);
-          return acc + (Number.isFinite(q) ? q : 0);
-        }, 0);
-        if(n>0){ badge.textContent = String(n); badge.style.display='inline-block'; }
-        else{ badge.style.display='none'; }
-      }catch(_e){
-        if (badge) badge.style.display='none';
-      }
+        const r = await fetch('/api/auth/me/', { credentials:'same-origin' });
+        return r.ok;
+      }catch(_){ return false; }
     }
-
-    // ---------- Crear/Renovar sesión Django desde Token (para admin/manage/…) ----------
     async function ensureDjangoSessionFromToken(){
-      if (!GAON_AUTH.hasToken()) return;
+      if (!hasToken()) return;
       try{
         await fetch('/api/auth/session/', {
           method: 'POST',
-          headers: { ...GAON_AUTH.authHeader() }, // Authorization: Token xxx
+          headers: { ...authHeader() },
           credentials: 'same-origin'
         });
       }catch(_){}
     }
-
-    // ---------- NUEVO: Alinear si hay sesión sin token (estado partido) ----------
-    async function alignAuthState(){
-      if (hasToken()) return; // si hay token, no forzamos nada
+    async function setupNav(){
+      const authEls=[...document.querySelectorAll('[data-auth]')];
+      const guestEls=[...document.querySelectorAll('[data-guest]')];
+      const logged = hasToken() || await hasSession();
+      authEls.forEach(e=>e.style.display = logged ? '' : 'none');
+      guestEls.forEach(e=>e.style.display = logged ? 'none' : '');
+    }
+    function showToast(msg, type='ok', sub=''){
+      const wrap = document.getElementById('toast'); if(!wrap) return;
+      const div = document.createElement('div'); div.className = 'toast'+(type==='err'?' err':'');
+      div.innerHTML = `<div>${msg}</div>${sub?`<small>${sub}</small>`:''}`; wrap.appendChild(div);
+      setTimeout(()=>div.remove(), 3500);
+    }
+    function getCsrf(){const n='csrftoken=';return (document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith(n))||'').slice(n.length)||''}
+    async function refreshCartCount(){
+      const badge = document.getElementById('cart-count'); if(!badge) return;
       try{
-        // Probamos “me” sin header de token; si responde OK, hay sesión de Django viva
+        const r = await fetch('/api/cart/');
+        if(!r.ok) throw 0;
+        const data = await r.json().catch(()=>({items:[]}));
+        const items = Array.isArray(data.items)?data.items:[];
+        const n = items.reduce((a,it)=>a+(Number(it?.qty)||0),0);
+        if(n>0){ badge.textContent=String(n); badge.style.display='inline-block'; } else { badge.style.display='none'; }
+      }catch(_){ badge.style.display='none'; }
+    }
+    async function ensureDjangoSessionFromToken(){
+      if (!hasToken()) return;
+      try{ await fetch('/api/auth/session/', { method:'POST', headers:{...authHeader()}, credentials:'same-origin' }); }catch(_){}
+    }
+    async function alignAuthState(){
+      if (hasToken()) return;
+      try{
         const r = await fetch('/api/auth/me/', { credentials:'same-origin' });
-        if (r.ok){
-          // Hay sesión pero no token => cerramos sesión Django y dejamos todo en guest
-          await fetch('/accounts/logout/', { credentials:'same-origin' });
-        }
+        if (r.ok){ await fetch('/accounts/logout/', { credentials:'same-origin' }); }
       }catch(_){}
     }
-
-    // ---------- Logout ----------
     async function logout(){
       try{ await fetch('/api/auth/token/logout/', {method:'POST', headers:{...authHeader()}}); }catch(_){}
-      clearToken();
-      // cerramos sesión de Django por GET y volvemos a /
-      window.location.href = '/accounts/logout/?next=/';
+      clearToken(); window.location.href='/accounts/logout/?next=/';
     }
-
+    function setupDrawer(){
+      const btn=document.getElementById('btn-toggle'); const drawer=document.getElementById('drawer');
+      if(!btn||!drawer) return;
+      btn.addEventListener('click', ()=>drawer.classList.toggle('open'));
+      document.querySelectorAll('[data-link]').forEach(a=>a.addEventListener('click', ()=>drawer.classList.remove('open')));
+    }
+    function markActive(){
+      const path = location.pathname.replace(/\/+$/,'/') || '/';
+      document.querySelectorAll('.nav a').forEach(a=>{
+        const href=a.getAttribute('href'); if(!href) return;
+        const norm=href.replace(/\/+$/,'/')||'/';
+        if (path.startsWith(norm) && norm !== '/'){ a.classList.add('active'); }
+        if (path === '/' && norm === '/'){ a.classList.add('active'); }
+      });
+    }
     document.addEventListener('DOMContentLoaded', async ()=>{
-      // 1) Si hay token, levantamos/renovamos la cookie de sesión
-      await ensureDjangoSessionFromToken();
-      setupNav();
+      setupDrawer();
+      await ensureDjangoSessionFromToken(); // si hay token, crea cookie de sesión
+      await setupNav();                     // reconoce login por Google
+      setTimeout(setupNav, 200);            // reintento por si la cookie tarda
       refreshCartCount();
+      markActive();
 
-      // 2) Si NO hay token pero el server cree que sí, alineamos (logout de sesión)
-      await alignAuthState();
-
-      // 3) Redirección de conveniencia al estar logueada
-      const p = location.pathname;
-      if (hasToken() && (p === '/' || p === '/login/' || p === '/signup/')) {
-        location.replace('/products/'); // ← ahora te lleva a Productos
-      }
-
-      // 4) Bind de logout
       const btnLogout = document.getElementById('logout');
       if (btnLogout){
         btnLogout.addEventListener('click', (e)=>{
@@ -172,13 +333,92 @@
           logout();
         });
       }
-    });
+    })
 
-    // Exponer helpers globales
+    // Exponer utilidades si ya las usabas
     window.GAON_AUTH = { hasToken, setToken, clearToken, authHeader };
     window.GAON_CART = { refresh: refreshCartCount };
     window.GAON_UI   = { toast: showToast };
-  </script>
 
+    // ==== LÓGICA DEL CHAT ====
+
+    window.CURRENT_USER = "{{ request.user.username|default:'' }}";
+
+    const chatFab = document.getElementById('chat-fab');
+    const chatBox = document.getElementById('chat-box');
+    const chatClose = document.getElementById('chat-close');
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const chatMsgs = document.getElementById('chat-messages');
+
+    chatFab.onclick = ()=>{ chatBox.style.display = 'flex'; chatFab.style.display='none'; loadChat(); };
+    chatClose.onclick = ()=>{ chatBox.style.display = 'none'; chatFab.style.display='flex'; };
+
+    async function loadChat(){
+      chatMsgs.innerHTML = '<div style="text-align:center;color:#999">Cargando...</div>';
+      try{
+        const r = await fetch('/api/chat/', { credentials:'same-origin', headers: { ...GAON_AUTH?.authHeader?.() }});
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        const msgs = await r.json();
+        renderChat(msgs);
+      }catch(e){
+        chatMsgs.innerHTML = `<div style="color:#b91c1c;text-align:center">Error al cargar chat<br>${e.message}</div>`;
+      }
+    }
+
+    function renderChat(msgs){
+      chatMsgs.innerHTML = '';
+      msgs.forEach(m=>{
+        const div = document.createElement('div');
+        div.style.margin = '8px 0';
+        div.style.padding = '6px 10px';
+        div.style.borderRadius = '10px';
+        div.style.maxWidth = '80%';
+        if(m.username === window.CURRENT_USER){
+          div.style.background = '#dcfce7';
+          div.style.alignSelf = 'flex-end';
+        } else {
+          div.style.background = '#f1f5f9';
+        }
+        div.textContent = m.texto;
+        chatMsgs.appendChild(div);
+      });
+      chatMsgs.scrollTop = chatMsgs.scrollHeight;
+    }
+
+    chatForm.addEventListener('submit', async (ev)=>{
+      ev.preventDefault();
+      const texto = chatInput.value.trim();
+      if(!texto) return;
+      chatInput.value = '';
+
+      // Pinta el mensaje del usuario inmediatamente (optimista)
+      const bubble = document.createElement('div');
+      bubble.style.margin = '8px 0';
+      bubble.style.padding = '6px 10px';
+      bubble.style.borderRadius = '10px';
+      bubble.style.maxWidth = '80%';
+      bubble.style.background = '#dcfce7';
+      bubble.style.alignSelf = 'flex-end';
+      bubble.textContent = texto;
+      chatMsgs.appendChild(bubble);
+      chatMsgs.scrollTop = chatMsgs.scrollHeight;
+
+      try{
+        const r = await fetch('/api/chat/', {
+          method:'POST',
+          headers:{'Content-Type':'application/json', ...(window.GAON_AUTH?.authHeader?.()||{})},
+          credentials:'same-origin',
+          body: JSON.stringify({texto})
+        });
+        if(!r.ok) throw new Error('Error '+r.status);
+
+        // 🔁 Refrescá la conversación para traer la respuesta del bot guardada en DB
+        await loadChat();
+      }catch(e){
+        GAON_UI?.toast?.('No se pudo enviar el mensaje','err',e.message);
+      }
+    });
+  </script>
 </body>
 </html>

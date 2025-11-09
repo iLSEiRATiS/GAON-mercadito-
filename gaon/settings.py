@@ -1,6 +1,7 @@
 from pathlib import Path
 import environ
 import os
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -42,6 +43,8 @@ INSTALLED_APPS = [
     'products',
     'cart',
     'payments',
+    "scraping",
+    "chat",
 ]
 
 MIDDLEWARE = [
@@ -184,3 +187,6 @@ CSRF_COOKIE_SAMESITE = "Lax"
 CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:8000",
 ]
+
+GEMINI_API_KEY = env("GEMINI_API_KEY", default="")
+GEMINI_MODEL = env("GEMINI_MODEL", default="gemini-1.5-flash-002")

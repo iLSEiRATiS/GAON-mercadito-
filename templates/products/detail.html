@@ -1,32 +1,40 @@
 {% extends "base.html" %}
+{% block title %}{{ p.nombre }} — GAON{% endblock %}
+
 {% block content %}
-<div class="row" style="gap:20px;align-items:flex-start">
-  <div class="card" style="flex:1;max-width:520px">
-    <div class="imgbox" style="height:320px">
-      {% if p.imagen %}
-        <img src="{{ p.imagen.url }}" alt="{{ p.nombre }}">
-      {% else %}
-        <div class="ph" aria-label="Sin imagen">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm0 2v9.586l-3.293-3.293a1 1 0 0 0-1.414 0L10 15.586l-2.293-2.293a1 1 0 0 0-1.414 0L5 14.586V5h14ZM5 19v-2.586l2.293-2.293 2.293 2.293a1 1 0 0 0 1.414 0L15.586 12 19 15.414V19H5Zm4-9a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
-          </svg>
-          <small>Sin imagen</small>
-        </div>
-      {% endif %}
+<section class="section">
+  <div class="row" style="gap:20px; align-items:flex-start; flex-wrap:wrap">
+    <div class="card" style="flex:1; min-width:280px; max-width:560px">
+      <div class="imgbox" style="height:360px">
+        {% if p.imagen %}
+          <img src="{{ p.imagen.url }}" alt="{{ p.nombre }}">
+        {% else %}
+          <div class="ph" aria-label="Sin imagen">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width:40px;height:40px;opacity:.75">
+              <path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm0 2v9.586l-3.293-3.293a1 1 0 0 0-1.414 0L10 15.586l-2.293-2.293a1 1 0 0 0-1.414 0L5 14.586V5h14ZM5 19v-2.586l2.293-2.293 2.293 2.293a1 1 0 0 0 1.414 0L15.586 12 19 15.414V19H5Zm4-9a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
+            </svg>
+            <small class="text-muted">Sin imagen</small>
+          </div>
+        {% endif %}
+      </div>
     </div>
-  </div>
-  <div style="flex:1">
-    <h1>{{ p.nombre }}</h1>
-    <div class="price" style="font-size:1.4rem;margin:.3rem 0">${{ p.precio }}</div>
-    <p>{{ p.descripcion|default:"" }}</p>
-    <p>Categoría: {{ p.category|default:"-" }} | Stock: {{ p.stock }}</p>
-    <div class="row" style="gap:8px">
-      <input id="qty" type="number" min="1" value="1" style="width:90px">
-      <button class="btn" onclick="add()">Agregar al carrito</button>
-      <a class="btn outline" href="/cart/">Ver carrito</a>
+
+    <div style="flex:1; min-width:280px">
+      <h1 style="margin:0 0 6px">{{ p.nombre }}</h1>
+      <div class="price" style="font-size:1.5rem; margin:.3rem 0">${{ p.precio|floatformat:0 }}</div>
+      <p class="text-muted">{{ p.descripcion|default:"" }}</p>
+      <p class="text-muted">Categoría: {{ p.category|default:"-" }} • Stock: {{ p.stock }}</p>
+
+      <div class="row" style="gap:8px; flex-wrap:wrap">
+        <input id="qty" type="number" min="1" value="1" style="width:100px">
+        <button class="btn" onclick="add()">Agregar al carrito</button>
+        <a class="btn outline" href="/cart/">Ver carrito</a>
+        <a class="btn outline" href="{% url 'compare-prices' %}?q={{ p.nombre|urlencode }}">Comparar precio</a>
+      </div>
+
       {% if request.user.is_authenticated %}
         {% if request.user.is_staff or p.user_id == request.user.id %}
-          <div class="row" style="gap:8px;margin-top:10px">
+          <div class="row" style="gap:8px; margin-top:12px; flex-wrap:wrap">
             <a class="btn outline" href="/products/manage/{{ p.id }}/edit/">Editar</a>
             <a class="btn outline" href="/products/manage/{{ p.id }}/delete/">Borrar</a>
           </div>
@@ -34,21 +42,18 @@
       {% endif %}
     </div>
   </div>
-</div>
-<script>
-function getCsrf(){ const n='csrftoken='; return (document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith(n))||'').slice(n.length) || '' }
+</section>
 
+<script>
+function getCsrf(){ const n='csrftoken='; return (document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith(n))||'').slice(n.length)||'' }
 async function add(){
   const qty = parseInt(document.getElementById('qty').value || '1', 10);
   await fetch('/api/cart/add/', {
     method:'POST',
     headers:{ 'Content-Type':'application/json', 'X-CSRFToken': getCsrf() },
     body: JSON.stringify({ product_id: {{ p.id }}, qty })
-  });
-
-  // 👉 actualiza el badge sin recargar
+  }).catch(()=>{});
   window.GAON_CART?.refresh?.();
-
   window.GAON_UI?.toast('Agregado al carrito');
 }
 </script>
