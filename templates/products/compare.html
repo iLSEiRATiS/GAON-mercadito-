@@ -1,60 +1,148 @@
-<!-- templates/products/compare.html -->
+{% extends "base.html" %}
 {% load static %}
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8">
-  <title>Comparar precios</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="{% static 'styles.css' %}" rel="stylesheet">
+{% block title %}Comparar precios — GAON{% endblock %}
+
+{% block content %}
+<section class="section">
+  <h2 style="margin:0 0 10px">Comparar precios</h2>
+
+  <!-- estilos específicos (ligeros, sin Bootstrap) -->
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; }
-    .container { max-width: 920px; margin: 0 auto; }
-    form { display: flex; gap: 8px; margin-bottom: 16px; }
-    input[type="text"] { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
-    button { padding: 10px 14px; border: 0; border-radius: 8px; background: #111827; color: #fff; cursor: pointer; }
-    button:hover { opacity: .9; }
-    .msg { margin: 10px 0; color: #4b5563; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
-    .muted { color: #6b7280; }
+    :root{ --card-radius:16px; --shadow:var(--shadow); --ribbon:#22c55e; }
+    .srchbar input{ height:46px; font-size:1.05rem }
+    .srchbar .btn{ height:46px; padding-inline:18px }
+
+    .deal-card{ position:relative; border:1px solid var(--border); background:#fff;
+      border-radius:var(--card-radius); box-shadow:var(--shadow-sm); overflow:hidden; height:100%;
+      display:flex; flex-direction:column; transition:transform .12s, box-shadow .12s; }
+    .deal-card:hover{ transform:translateY(-2px); box-shadow:var(--shadow) }
+
+    .deal-media{ display:grid; place-items:center; background:#f2f6fb; height:160px }
+    .deal-media img{ max-height:100px; object-fit:contain }
+    .deal-body{ padding:14px 16px }
+    .deal-title{ font-weight:700; font-size:1rem; margin:2px 0 6px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden }
+    .deal-meta{ font-size:.9rem; color:var(--muted) }
+    .deal-price{ font-size:1.25rem; font-weight:800; margin:6px 0 4px }
+    .deal-footer{ margin-top:auto; padding:12px 16px 16px }
+    .badge{ display:inline-block; font-size:.8rem; padding:4px 10px; border-radius:999px }
+    .badge.ok{ background:#dcfce7; color:#065f46 } .badge.no{ background:#fee2e2; color:#991b1b }
+
+    .ribbon{ position:absolute; top:12px; left:-8px; rotate:-8deg; background:var(--ribbon); color:#fff;
+      font-weight:800; padding:6px 12px; border-radius:8px; box-shadow:0 6px 16px rgba(34,197,94,.35); font-size:.85rem }
+    .grid-cards{ display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:16px }
   </style>
-</head>
-<body>
-  <div class="container">
-    <h1>Comparar precios</h1>
 
-    <form method="get" action="">
-      <input type="text" name="q" placeholder="Buscar producto..." value="{{ query|default:'' }}">
-      <button type="submit">Buscar</button>
-    </form>
+  <!-- buscador -->
+  <form id="searchForm" class="srchbar row" style="gap:8px; flex-wrap:wrap" method="get" action="">
+    <input id="q" type="text" name="q" value="{{ query }}" placeholder="Ej. arroz, azúcar, yerba, buzo" required style="flex:1; min-width:240px">
+    <button type="submit" class="btn">Buscar</button>
+    <div id="loading" style="display:none; align-self:center">Buscando…</div>
+  </form>
 
-    {% if msg %}<div class="msg">{{ msg }}</div>{% endif %}
+  <p id="stats" class="text-muted" style="margin:8px 0 12px">
+    {% if query %}Resultados para “{{ query }}”{% else %}Escribí un término y presioná Buscar{% endif %}
+  </p>
+  <p id="msg" class="text-muted"></p>
 
+  <!-- grid de resultados -->
+  <div id="resultsGrid" class="grid-cards">
     {% if results %}
-      <table>
-        <thead>
-          <tr>
-            <th>Producto</th>
-            <th>Precio</th>
-            <th>Tienda</th>
-            <th>Link</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for r in results %}
-          <tr>
-            <td>{{ r.name }}</td>
-            <td>{{ r.price }}</td>
-            <td>{{ r.store }}</td>
-            <td><a href="{{ r.url }}" target="_blank" rel="noopener">Ver</a></td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <p class="muted">No hay resultados para mostrar.</p>
+      {% with best=results.0.price %}
+        {% for r in results %}
+          <article class="deal-card {% if r.price == best %}is-best{% endif %}">
+            {% if r.price == best %}<span class="ribbon">Mejor precio</span>{% endif %}
+            <div class="deal-media">
+              <img src="{% static 'img/shops/default.png' %}" alt="{{ r.source }}">
+            </div>
+            <div class="deal-body">
+              <div class="deal-meta mb-1">{{ r.source }}</div>
+              <h3 class="deal-title">{{ r.title }}</h3>
+              <div class="deal-price">${{ r.price|floatformat:0 }} {{ r.currency|default:"ARS" }}</div>
+              {% if r.in_stock %}
+                <span class="badge ok">En stock</span>
+              {% else %}
+                <span class="badge no">Sin stock</span>
+              {% endif %}
+            </div>
+            <div class="deal-footer">
+              <a href="{{ r.url|default:'#' }}" target="_blank" rel="noopener" class="btn" style="width:100%">Ver</a>
+            </div>
+          </article>
+        {% endfor %}
+      {% endwith %}
     {% endif %}
   </div>
-</body>
-</html>
+</section>
+
+<script>
+  const fmtARS = new Intl.NumberFormat('es-AR');
+  const SHOP_LOGOS = {
+    'tiendaA': "{% static 'img/shops/tiendaA.png' %}",
+    'tiendaB': "{% static 'img/shops/tiendaB.png' %}",
+    'tiendaC': "{% static 'img/shops/tiendaC.png' %}",
+    'default': "{% static 'img/shops/default.png' %}",
+  };
+  const needsFallback = url => {
+    try{ if(!url||url==='#'||url.startsWith('about:')) return true; const u=new URL(url); return !u.host||u.host.startsWith('example.'); }catch{ return true; } };
+  const fallbackUrl = (title, source) => {
+    const q=[title||'',source||''].join(' ').trim(); const p=new URLSearchParams({q});
+    // p.set('tbm','shop'); // si querés Google Shopping
+    return `https://www.google.com/search?${p.toString()}`;
+  };
+
+  const form = document.getElementById('searchForm');
+  const input = document.getElementById('q');
+  const loading = document.getElementById('loading');
+  const grid = document.getElementById('resultsGrid');
+  const stats = document.getElementById('stats');
+  const msg = document.getElementById('msg');
+
+  function logoFor(source){
+    const k=(source||'').toLowerCase();
+    if (SHOP_LOGOS[k]) return SHOP_LOGOS[k];
+    if (k.includes('tiendaa')) return SHOP_LOGOS['tiendaA'];
+    if (k.includes('tiendab')) return SHOP_LOGOS['tiendaB'];
+    if (k.includes('tiendac')) return SHOP_LOGOS['tiendaC'];
+    return SHOP_LOGOS['default'];
+  }
+  function showLoading(on){ loading.style.display = on ? 'inline-block' : 'none'; }
+
+  function renderCards(items){
+    grid.innerHTML=''; if(!items||!items.length){ msg.textContent='No se encontraron resultados.'; return; }
+    const best = Math.min(...items.map(x => Number.isFinite(x.price) ? x.price : Infinity));
+    for(const r of items){
+      const title=r.title||'Producto'; const source=r.source||'N/D';
+      let url=r.url||'#'; if(needsFallback(url)) url=fallbackUrl(title,source);
+      const currency=r.currency||'ARS'; const price=Number.isFinite(+r.price)?+r.price:null;
+
+      const el=document.createElement('article'); el.className='deal-card';
+      el.innerHTML=`
+        ${price===best?'<span class="ribbon">Mejor precio</span>':''}
+        <div class="deal-media"><img src="${logoFor(source)}" alt="${source}"></div>
+        <div class="deal-body">
+          <div class="deal-meta mb-1">${source}</div>
+          <h3 class="deal-title">${title}</h3>
+          <div class="deal-price">${price?('$'+fmtARS.format(price)):'N/D'} ${currency}</div>
+          ${r.in_stock?'<span class="badge ok">En stock</span>':'<span class="badge no">Sin stock</span>'}
+        </div>
+        <div class="deal-footer"><a class="btn" href="${url}" target="_blank" rel="noopener" style="width:100%">Ver</a></div>`;
+      grid.appendChild(el);
+    }
+  }
+
+  async function doSearch(q){
+    if(!q) return; showLoading(true); msg.textContent='';
+    try{
+      const r=await fetch(`/api/scraping/search/?q=${encodeURIComponent(q)}`);
+      if(!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data=await r.json();
+      stats.textContent=`Resultados para “${q}” — ${data.length}`;
+      renderCards(data);
+    }catch(e){ msg.textContent='Error: '+e.message; }
+    finally{ showLoading(false); }
+  }
+
+  form.addEventListener('submit', ev => { ev.preventDefault(); const q=input.value.trim(); if(q) doSearch(q); });
+  window.addEventListener('DOMContentLoaded', ()=>{ const q=new URLSearchParams(location.search).get('q'); if(q) doSearch(q); });
+</script>
+{% endblock %}

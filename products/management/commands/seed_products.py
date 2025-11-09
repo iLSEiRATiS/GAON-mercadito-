@@ -1,93 +1,131 @@
-import os
+# products/management/commands/seed_products.py
+import random
 from decimal import Decimal
-from io import BytesIO
 from django.core.management.base import BaseCommand
 from django.utils.text import slugify
-from django.core.files.base import ContentFile
-from django.contrib.auth import get_user_model
-from PIL import Image, ImageDraw, ImageFont
-from products.models import Product, Category
+from django.db import transaction
 
-DATA = [
-    {"nombre": "Remera GAON", "descripcion": "Remera premium 100% algodón", "precio": "5999.90", "stock": 25, "categoria": "Indumentaria"},
-    {"nombre": "Buzo GAON", "descripcion": "Buzo frisa suave", "precio": "18999.00", "stock": 12, "categoria": "Indumentaria"},
-    {"nombre": "Zapatillas GAON", "descripcion": "Running livianas", "precio": "25999.00", "stock": 18, "categoria": "Calzado"},
-    {"nombre": "Gorra GAON", "descripcion": "Gorra bordada", "precio": "8999.00", "stock": 50, "categoria": "Accesorios"},
-    {"nombre": "Mochila GAON", "descripcion": "Mochila urbana 20L", "precio": "21999.00", "stock": 15, "categoria": "Accesorios"},
+from products.models import Category, Product
+
+CATEGORIAS = [
+    "Remeras",
+    "Pantalones",
+    "Camperas",
+    "Zapatillas",
+    "Accesorios",
+    "Vestidos",
 ]
 
-def ensure_category(name: str):
-    slug = slugify(name)
-    c, _ = Category.objects.get_or_create(nombre=name, defaults={"slug": slug})
-    return c
+# Palabras base para generar nombres distintos, con repetidos por categoría
+ADJETIVOS = ["Clásica", "Premium", "Urban", "Básica", "Slim", "Oversize", "Deportiva", "Casual"]
+COLORES   = ["Negra", "Blanca", "Azul", "Roja", "Verde", "Beige", "Gris", "Marrón"]
+PIEZAS    = ["Remera", "Pantalón", "Campera", "Zapatilla", "Cinturón", "Bufanda", "Vestido", "Short"]
 
-def make_image(label: str, filename: str) -> ContentFile:
-    w, h = 800, 600
-    img = Image.new("RGB", (w, h), (245, 245, 245))
-    draw = ImageDraw.Draw(img)
-    try:
-        font = ImageFont.load_default()
-    except Exception:
-        font = None
-    bbox = draw.textbbox((0, 0), label, font=font)
-    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
-    draw.text(((w - tw) / 2, (h - th) / 2), label, fill=(20, 20, 20), font=font)
-    buf = BytesIO()
-    img.save(buf, format="JPEG", quality=90)
-    buf.seek(0)
-    return ContentFile(buf.read(), name=filename)
+DESCRIPCION_BASE = (
+    "Producto de excelente calidad, pensado para uso diario. "
+    "Tela suave y resistente. Ideal para combinar y destacar tu estilo."
+)
 
-def pick_owner():
-    User = get_user_model()
-    for uname in ("admin1", "admin"):
-        try:
-            return User.objects.get(username=uname)
-        except User.DoesNotExist:
-            pass
-    u = User.objects.filter(is_staff=True).first()
-    if u:
-        return u
-    u = User.objects.first()
-    if u:
-        return u
-    return User.objects.create_superuser("admin1", "admin1@test.com", "admin12345")
+def precio_random():
+    # precios verosímiles en ARS
+    return Decimal(random.randrange(8_000, 120_000))  # 8k a 120k
+
+def stock_random():
+    return random.randint(0, 60)
+
+def pick_image_url(seed: str) -> str:
+    """
+    Deja una imagen remota genérica (NO fakestore). 
+    picsum.photos genera imágenes reproducibles por seed.
+    """
+    s = slugify(seed) or "gaon"
+    # 600x600 cuadrada para cards
+    return f"https://picsum.photos/seed/{s}/600/600"
 
 class Command(BaseCommand):
-    help = "Carga categorías y productos demo con imágenes dummy y asigna un dueño al producto"
+    help = (
+        "Genera categorías y N productos aleatorios, borrando previamente los existentes si se indica.\n"
+        "Uso: python manage.py seed_products [--clear] [--count 24]"
+    )
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--clear",
+            action="store_true",
+            help="Borra TODOS los productos existentes antes de sembrar.",
+        )
+        parser.add_argument(
+            "--count",
+            type=int,
+            default=24,
+            help="Cantidad total de productos a crear (default 24).",
+        )
+
+    @transaction.atomic
     def handle(self, *args, **opts):
-        owner = pick_owner()
-        product_fields = {f.name for f in Product._meta.get_fields() if getattr(f, "concrete", False)}
-        owner_field = next((n for n in ("user", "owner", "created_by") if n in product_fields), None)
-        created = 0
+        clear = opts["clear"]
+        count = int(opts["count"] or 24)
 
-        for row in DATA:
-            cat = ensure_category(row["categoria"])
+        if clear:
+            n = Product.objects.count()
+            Product.objects.all().delete()
+            self.stdout.write(self.style.WARNING(f"🧹 Productos eliminados: {n}"))
 
-            defaults = {}
-            if "descripcion" in product_fields: defaults["descripcion"] = row["descripcion"]
-            if "precio" in product_fields: defaults["precio"] = Decimal(row["precio"])
-            if "stock" in product_fields: defaults["stock"] = int(row["stock"])
-            if "activo" in product_fields: defaults["activo"] = True
-            if "category" in product_fields: defaults["category"] = cat
-            if owner_field: defaults[owner_field] = owner
+        # Asegurar categorías locales
+        cat_objs = []
+        for nombre in CATEGORIAS:
+            slug = slugify(nombre)
+            cat, _ = Category.objects.get_or_create(slug=slug, defaults={"nombre": nombre})
+            # Si el nombre cambió, actualizamos (por si el modelo lo soporta)
+            if cat.nombre != nombre:
+                cat.nombre = nombre
+                cat.save(update_fields=["nombre"])
+            cat_objs.append(cat)
 
-            p, was_created = Product.objects.get_or_create(
-                nombre=row["nombre"],
-                defaults=defaults
+        self.stdout.write(self.style.SUCCESS(f"📁 Categorías listas: {', '.join(c.nombre for c in cat_objs)}"))
+
+        creados = 0
+        # Garantizamos que haya múltiples productos por categoría (útil para comparar)
+        base_por_cat = max(2, count // max(1, len(cat_objs)))  # al menos 2 por categoría
+        pool = []
+
+        for cat in cat_objs:
+            for _ in range(base_por_cat):
+                pool.append(cat)
+
+        # Si faltan para llegar a 'count', completamos al azar
+        while len(pool) < count:
+            pool.append(random.choice(cat_objs))
+        # Si sobran, recortamos
+        pool = pool[:count]
+
+        for idx, categoria in enumerate(pool, start=1):
+            # Armamos un nombre verosímil
+            pieza = random.choice(PIEZAS)
+            adj = random.choice(ADJETIVOS)
+            color = random.choice(COLORES)
+            nombre = f"{pieza} {adj} {color}"
+
+            # Para evitar muchos duplicados exactos, agregamos un nro a veces
+            if random.random() < 0.35:
+                nombre += f" #{random.randint(1, 99)}"
+
+            precio = precio_random()
+            stock  = stock_random()
+            desc   = DESCRIPCION_BASE
+            image_url = pick_image_url(f"{categoria.slug}-{nombre}")
+
+            p = Product(
+                user=None,                 # opcional/nullable en tu modelo
+                category=categoria,
+                nombre=nombre,
+                precio=precio,
+                descripcion=desc,
+                stock=stock,
+                image_url=image_url,       # usamos URL remota genérica (no fakestore)
+                activo=True,
             )
+            p.save()
+            creados += 1
 
-            if was_created:
-                created += 1
-                if "imagen" in product_fields:
-                    filename = f"{slugify(row['nombre'])}.jpg"
-                    content = make_image(row["nombre"], filename)
-                    try:
-                        p.imagen.save(filename, content, save=True)
-                    except Exception:
-                        pass
-
-        msg = f"Semilla completada. Productos creados: {created}"
-        if owner_field:
-            msg += f" | Propietario: {owner} via campo '{owner_field}'"
-        self.stdout.write(self.style.SUCCESS(msg))
+        self.stdout.write(self.style.SUCCESS(f"✅ Seed listo. Productos creados: {creados}"))

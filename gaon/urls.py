@@ -5,6 +5,8 @@ from django.views.generic import RedirectView, TemplateView
 from django.conf import settings
 from django.conf.urls.static import static
 from django.http import HttpResponse
+from django.contrib import admin
+from django.urls import path, include
 
 # API docs
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -17,7 +19,7 @@ from core.sitemaps import StaticViewSitemap
 from users.views import login_page, signup_page, social_bridge, session_from_token
 
 # Web views extra
-from products.views import compare_prices  # home NO se importa, usamos TemplateView
+from products.views import home, compare_prices_view  # home NO se importa, usamos TemplateView
 
 # --- Sitemaps registry ---
 sitemaps = {
@@ -54,7 +56,11 @@ urlpatterns = [
     path("api/products/", include("products.api.urls")),
     path("api/cart/", include("cart.api.urls")),
     path("api/payments/", include("payments.api.urls")),
-    path("api/scraping/", include("scraping.api.urls")),
+    path(
+        "api/scraping/",
+        include(("scraping.api.urls", "scraping_api"), namespace="scraping_api"),
+    ),
+    path("admin/", admin.site.urls),
 
     # ---------- Web (HTML) ----------
     path("products/", include("products.web_urls")),
@@ -69,10 +75,14 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     path("social/bridge/", social_bridge, name="social-bridge"),
 
+    # API del chatbot (Gemini)
+    path("api/chat/", include(("chatbot.api.urls", "chatbot_api"), namespace="chatbot_api")),
+
     # Comparador de precios (HTML)
-    path("comparar/", compare_prices, name="compare-prices"),
+    path("comparar/", compare_prices_view, name="compare-prices"),
 
     # ---------- SEO ----------
     path("robots.txt", robots_txt, name="robots"),
     path("sitemap.xml", sitemap, {"sitemaps": sitemaps}, name="django.contrib.sitemaps.views.sitemap"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+

@@ -16,4 +16,3 @@ urlpatterns = [
     path("manage/<int:pk>/edit/", web_views.product_manage_edit, name="product-edit"),
     path("manage/<int:pk>/delete/", web_views.product_delete, name="product-delete"),
 ]
-

@@ -6,42 +6,51 @@
   <title>{% block title %}GAON{% endblock %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Favicon -->
   <link rel="icon" href="{% static 'gaon.ico' %}" sizes="any" />
   <link rel="shortcut icon" href="{% static 'gaon.ico' %}" />
 
   <style>
     :root{
-      --c:#111; --a:#0a7; --b:#f6f7f9; --err:#c0392b; --ok:#16a085;
-      --muted:#6b7280; --border:#e5e7eb; --card:#fff;
+      --fg:#0b2239;
+      --muted:#5b6b7a;
+      --border:#e6eef7;
+      --card:#ffffff;
+
+      /* paleta celeste/azul pastel */
+      --bg:#f4f9ff;
+      --brand:#3aa7ff;
+      --brand-600:#1f8fe7;
+      --brand-50:#eaf5ff;
+
+      --ok:#16a085; --err:#c0392b;
     }
 
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0; font-family: system-ui,Segoe UI,Roboto,Arial; color:var(--c);
-      display:flex; flex-direction:column; min-height:100vh; background:var(--b);
+      margin:0; font-family: system-ui,Segoe UI,Roboto,Arial; color:var(--fg);
+      display:flex; flex-direction:column; min-height:100vh; background:var(--bg);
     }
 
     header{ background:#fff; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:50; }
     .wrap{max-width:1100px; margin:0 auto; padding:12px}
     .row{display:flex; align-items:center; gap:10px}
     a{color:inherit; text-decoration:none}
-    a:hover{opacity:.9}
+    a:hover{opacity:.95}
 
     .brand{gap:8px}
     .brand img{width:28px;height:28px;display:block}
-    .nav{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .nav{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
     .nav a{ padding:8px 10px; border-radius:10px; white-space:nowrap; }
-    .nav a:hover{background:#f5f5f5}
-    .nav .active{background:#eefcf8; color:#065f46}
+    .nav a:hover{background:var(--brand-50)}
+    .nav .active{background:var(--brand-50); color:var(--brand-600)}
 
     .cart-link{position:relative; display:inline-flex; align-items:center; gap:6px; padding:6px 8px; border-radius:10px}
     .cart-link svg{width:22px;height:22px; display:block}
     .badge{
       position:absolute; top:-6px; right:-6px; min-width:20px; height:20px; line-height:20px;
-      border-radius:10px; background:var(--a); color:#fff; font-size:12px; text-align:center; padding:0 6px; display:none;
-      box-shadow:0 1px 0 rgba(0,0,0,.1);
+      border-radius:10px; background:var(--brand); color:#fff; font-size:12px; text-align:center; padding:0 6px; display:none;
+      box-shadow:0 1px 0 rgba(0,0,0,.08);
     }
 
     .nav-toggle{ display:none; border:1px solid var(--border); background:#fff; border-radius:10px; padding:8px 10px; cursor:pointer; }
@@ -62,13 +71,14 @@
       .cart-link{align-self:flex-start}
     }
 
-    .btn{background:var(--a); color:#fff; border:0; border-radius:10px; padding:10px 14px; cursor:pointer}
-    .btn.outline{background:#fff;color:var(--a);border:1px solid var(--a)}
-    input,select{padding:10px;border:1px solid var(--border);border-radius:10px}
+    .btn{background:var(--brand); color:#fff; border:0; border-radius:10px; padding:10px 14px; cursor:pointer}
+    .btn:hover{filter:brightness(0.98)}
+    .btn.outline{background:#fff;color:var(--brand-600);border:1px solid var(--brand-600)}
+    input,select,textarea{padding:10px;border:1px solid var(--border);border-radius:10px;background:#fff}
 
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin:16px 0}
-    .card{background:var(--card); border:1px solid var(--border); border-radius:16px; overflow:hidden}
-    .card img{width:100%; height:180px; object-fit:cover; background:#fafafa}
+    .card{background:var(--card); border:1px solid var(--border); border-radius:16px; overflow:hidden; box-shadow:0 8px 24px rgba(28,66,104,.05)}
+    .card img{width:100%; height:180px; object-fit:cover; background:#f8fbff}
     .pad{padding:12px}
     .price{font-weight:700}
 
@@ -78,15 +88,58 @@
     footer .wrap{padding:16px; color:var(--muted); display:flex; gap:8px; flex-wrap:wrap; justify-content:space-between}
     .foot-left, .foot-right{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
 
-    #toast{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:9999}
+    #toast{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:9000}
     .toast{background:#fff;border-left:6px solid var(--ok);border:1px solid var(--border);box-shadow:0 6px 20px rgba(0,0,0,.1);border-radius:8px;padding:10px 12px;min-width:240px}
     .toast.err{border-left-color:var(--err)}
     .toast small{display:block;color:#666}
 
-    .imgbox{width:100%;height:180px;background:#f3f4f6;display:flex;align-items:center;justify-content:center}
+    .imgbox{width:100%;height:180px;background:#f3f7fb;display:flex;align-items:center;justify-content:center}
     .imgbox img{width:100%;height:100%;object-fit:cover;display:block}
     .imgbox .ph{display:flex;flex-direction:column;align-items:center;gap:6px;color:#9aa0a6}
     .imgbox .ph svg{width:36px;height:36px;opacity:.7}
+
+    /* ====== Widget de Chat flotante ====== */
+    .chat-fab{
+      position:fixed; right:18px; bottom:18px; z-index:9500;
+      width:56px; height:56px; border-radius:50%;
+      display:grid; place-items:center; cursor:pointer;
+      background:linear-gradient(135deg, var(--brand), #7ac6ff);
+      color:#fff; box-shadow:0 10px 24px rgba(58,167,255,.35);
+      border:0;
+    }
+    .chat-fab:hover{ transform:translateY(-1px); }
+
+    .chat-panel{
+      position:fixed; right:18px; bottom:86px; z-index:9500;
+      width:min(90vw, 340px); max-height:70vh;
+      display:none; flex-direction:column; border-radius:16px;
+      background:#ffffff; border:1px solid var(--border);
+      box-shadow:0 16px 36px rgba(28,66,104,.15); overflow:hidden;
+    }
+    .chat-panel.open{ display:flex; }
+
+    .chat-head{
+      background:linear-gradient(135deg, #f7fbff, #eef6ff);
+      border-bottom:1px solid var(--border);
+      padding:10px 12px; display:flex; align-items:center; justify-content:space-between;
+    }
+    .chat-title{ font-weight:700 }
+    .chat-close{ background:transparent; border:0; cursor:pointer; color:#376792 }
+    .chat-body{
+      padding:10px; overflow:auto; display:flex; flex-direction:column; gap:10px;
+      background: #fafcff;
+    }
+    .msg{
+      max-width:90%; padding:10px 12px; border-radius:12px; white-space:pre-wrap;
+      box-shadow:0 6px 16px rgba(28,66,104,.05); border:1px solid var(--border);
+      background:#fff;
+    }
+    .msg.user{ align-self:flex-end; background:#e9f5ff; border-color:#cfe9ff }
+    .msg.bot { align-self:flex-start; }
+    .chat-foot{ display:flex; gap:8px; padding:10px; border-top:1px solid var(--border); background:#fff }
+    .chat-input{ flex:1 }
+    .chat-send{ white-space:nowrap }
+    .chat-hint{ font-size:.8rem; color:var(--muted); padding:0 10px 10px }
   </style>
 </head>
 <body>
@@ -110,10 +163,16 @@
           {% if request.user.is_authenticated and request.user.is_staff %}
             <a href="/categories/manage/" data-link>Categorías</a>
           {% endif %}
+          <a class="nav-link" href="{% url 'compare-prices' %}">Comparar precios</a>
+          
+          <!-- Visible solo para invitados -->
           <a href="/login/" data-guest data-link>Iniciar sesión</a>
           <a href="/signup/" data-guest data-link>Registrarse</a>
+
+          <!-- Visible solo para autenticados -->
           <a href="/account/" id="my-account" data-auth style="display:none" data-link>Mi cuenta</a>
           <a href="/#" id="logout" data-auth style="display:none" data-link>Salir</a>
+        </nav>
         </nav>
 
         <a href="/cart/" class="cart-link" aria-label="Carrito">
@@ -150,110 +209,114 @@
 
   <div id="toast"></div>
 
+  <!-- ====== Widget de Chat (flotante) ====== -->
+  <button class="chat-fab" id="chat-fab" aria-label="Abrir chat">
+    <!-- ícono burbuja -->
+    <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true">
+      <path d="M20 2H4a2 2 0 0 0-2 2v17.6a.4.4 0 0 0 .64.32L7 18h13a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Z"/>
+    </svg>
+  </button>
+
+  <section class="chat-panel" id="chat-panel" aria-live="polite">
+    <div class="chat-head">
+      <div class="chat-title">Asistente GAON</div>
+      <button class="chat-close" id="chat-close" title="Cerrar">✕</button>
+    </div>
+    <div class="chat-body" id="chat-body">
+      <div class="msg bot">¡Hola! Soy el asistente. ¿En qué te ayudo?</div>
+    </div>
+    <div class="chat-foot">
+      <input id="chat-input" class="chat-input" type="text" placeholder="Escribí tu consulta y presioná Enter...">
+      <button id="chat-send" class="btn chat-send">Enviar</button>
+    </div>
+    <div class="chat-hint">Usa palabras simples. No compartas datos sensibles.</div>
+  </section>
+
   <script>
+    // ==== helpers existentes ====
     const TKEY='gaon_token';
     function hasToken(){ return !!localStorage.getItem(TKEY); }
     function setToken(t){ localStorage.setItem(TKEY, t); }
     function clearToken(){ localStorage.removeItem(TKEY); }
     function authHeader(){ const t=localStorage.getItem(TKEY); return t ? {'Authorization':'Token '+t} : {}; }
-
-    function setupNav(){
-      const authEls=[...document.querySelectorAll('[data-auth]')];
-      const guestEls=[...document.querySelectorAll('[data-guest]')];
-      const logged=hasToken();
-      authEls.forEach(e=>e.style.display = logged ? '' : 'none');
-      guestEls.forEach(e=>e.style.display = logged ? 'none' : '');
-    }
-
-    function showToast(msg, type='ok', sub=''){
-      const wrap = document.getElementById('toast');
-      if(!wrap) return;
-      const div = document.createElement('div');
-      div.className = 'toast'+(type==='err'?' err':'');
-      div.innerHTML = `<div>${msg}</div>${sub?`<small>${sub}</small>`:''}`;
-      wrap.appendChild(div);
-      setTimeout(()=>{ div.remove(); }, 3500);
-    }
-
-    async function refreshCartCount(){
-      const badge = document.getElementById('cart-count');
-      if(!badge) return;
+    async function hasSession(){
       try{
-        const r = await fetch('/api/cart/');
-        if(!r.ok) throw new Error('HTTP '+r.status);
-        const data = await r.json().catch(()=>({items:[]}));
-        const items = Array.isArray(data.items) ? data.items : [];
-        const n = items.reduce((acc,it)=>{
-          const q = Number(it?.qty);
-          return acc + (Number.isFinite(q) ? q : 0);
-        }, 0);
-        if(n>0){ badge.textContent = String(n); badge.style.display='inline-block'; }
-        else{ badge.style.display='none'; }
-      }catch(_e){
-        if (badge) badge.style.display='none';
-      }
+        const r = await fetch('/api/auth/me/', { credentials:'same-origin' });
+        return r.ok;
+      }catch(_){ return false; }
     }
-
     async function ensureDjangoSessionFromToken(){
-      if (!GAON_AUTH.hasToken()) return;
+      if (!hasToken()) return;
       try{
         await fetch('/api/auth/session/', {
           method: 'POST',
-          headers: { ...GAON_AUTH.authHeader() },
+          headers: { ...authHeader() },
           credentials: 'same-origin'
         });
       }catch(_){}
     }
-
+    async function setupNav(){
+      const authEls=[...document.querySelectorAll('[data-auth]')];
+      const guestEls=[...document.querySelectorAll('[data-guest]')];
+      const logged = hasToken() || await hasSession();
+      authEls.forEach(e=>e.style.display = logged ? '' : 'none');
+      guestEls.forEach(e=>e.style.display = logged ? 'none' : '');
+    }
+    function showToast(msg, type='ok', sub=''){
+      const wrap = document.getElementById('toast'); if(!wrap) return;
+      const div = document.createElement('div'); div.className = 'toast'+(type==='err'?' err':'');
+      div.innerHTML = `<div>${msg}</div>${sub?`<small>${sub}</small>`:''}`; wrap.appendChild(div);
+      setTimeout(()=>div.remove(), 3500);
+    }
+    function getCsrf(){const n='csrftoken=';return (document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith(n))||'').slice(n.length)||''}
+    async function refreshCartCount(){
+      const badge = document.getElementById('cart-count'); if(!badge) return;
+      try{
+        const r = await fetch('/api/cart/');
+        if(!r.ok) throw 0;
+        const data = await r.json().catch(()=>({items:[]}));
+        const items = Array.isArray(data.items)?data.items:[];
+        const n = items.reduce((a,it)=>a+(Number(it?.qty)||0),0);
+        if(n>0){ badge.textContent=String(n); badge.style.display='inline-block'; } else { badge.style.display='none'; }
+      }catch(_){ badge.style.display='none'; }
+    }
+    async function ensureDjangoSessionFromToken(){
+      if (!hasToken()) return;
+      try{ await fetch('/api/auth/session/', { method:'POST', headers:{...authHeader()}, credentials:'same-origin' }); }catch(_){}
+    }
     async function alignAuthState(){
       if (hasToken()) return;
       try{
         const r = await fetch('/api/auth/me/', { credentials:'same-origin' });
-        if (r.ok){
-          await fetch('/accounts/logout/', { credentials:'same-origin' });
-        }
+        if (r.ok){ await fetch('/accounts/logout/', { credentials:'same-origin' }); }
       }catch(_){}
     }
-
     async function logout(){
       try{ await fetch('/api/auth/token/logout/', {method:'POST', headers:{...authHeader()}}); }catch(_){}
-      clearToken();
-      window.location.href = '/accounts/logout/?next=/';
+      clearToken(); window.location.href='/accounts/logout/?next=/';
     }
-
     function setupDrawer(){
-      const btn = document.getElementById('btn-toggle');
-      const drawer = document.getElementById('drawer');
-      if(!btn || !drawer) return;
-      btn.addEventListener('click', ()=>{ drawer.classList.toggle('open'); });
-      document.querySelectorAll('[data-link]').forEach(a=>{
-        a.addEventListener('click', ()=> drawer.classList.remove('open'));
-      });
+      const btn=document.getElementById('btn-toggle'); const drawer=document.getElementById('drawer');
+      if(!btn||!drawer) return;
+      btn.addEventListener('click', ()=>drawer.classList.toggle('open'));
+      document.querySelectorAll('[data-link]').forEach(a=>a.addEventListener('click', ()=>drawer.classList.remove('open')));
     }
-
     function markActive(){
       const path = location.pathname.replace(/\/+$/,'/') || '/';
       document.querySelectorAll('.nav a').forEach(a=>{
-        const href = a.getAttribute('href'); if(!href) return;
-        const norm = href.replace(/\/+$/,'/') || '/';
+        const href=a.getAttribute('href'); if(!href) return;
+        const norm=href.replace(/\/+$/,'/')||'/';
         if (path.startsWith(norm) && norm !== '/'){ a.classList.add('active'); }
         if (path === '/' && norm === '/'){ a.classList.add('active'); }
       });
     }
-
     document.addEventListener('DOMContentLoaded', async ()=>{
       setupDrawer();
-      await ensureDjangoSessionFromToken();
-      setupNav();
+      await ensureDjangoSessionFromToken(); // si hay token, crea cookie de sesión
+      await setupNav();                     // reconoce login por Google
+      setTimeout(setupNav, 200);            // reintento por si la cookie tarda
       refreshCartCount();
-      await alignAuthState();
       markActive();
-
-      const p = location.pathname;
-      if (hasToken() && (p === '/' || p === '/login/' || p === '/signup/')) {
-        // Si preferís forzar tienda al loguear, descomentá:
-        // location.replace('/products/');
-      }
 
       const btnLogout = document.getElementById('logout');
       if (btnLogout){
@@ -262,11 +325,70 @@
           logout();
         });
       }
-    });
+    })
 
+    // Exponer utilidades si ya las usabas
     window.GAON_AUTH = { hasToken, setToken, clearToken, authHeader };
     window.GAON_CART = { refresh: refreshCartCount };
     window.GAON_UI   = { toast: showToast };
+
+    // ==== LÓGICA DEL CHAT ====
+    (function(){
+      const fab = document.getElementById('chat-fab');
+      const panel = document.getElementById('chat-panel');
+      const closeBtn = document.getElementById('chat-close');
+      const body = document.getElementById('chat-body');
+      const input = document.getElementById('chat-input');
+      const send = document.getElementById('chat-send');
+
+      let pending = false;
+      const history = []; // opcional para mostrar en UI
+
+      function toggle(open){
+        panel.classList.toggle('open', open ?? !panel.classList.contains('open'));
+        if (panel.classList.contains('open')) input?.focus();
+      }
+      fab?.addEventListener('click', ()=>toggle(true));
+      closeBtn?.addEventListener('click', ()=>toggle(false));
+
+      function addMsg(text, who='bot'){
+        const div = document.createElement('div');
+        div.className = 'msg ' + (who === 'user' ? 'user' : 'bot');
+        div.textContent = text;
+        body.appendChild(div);
+        body.scrollTop = body.scrollHeight;
+      }
+
+      async function ask(){
+        if (pending) return;
+        const q = (input.value || "").trim();
+        if (!q) return;
+        input.value = "";
+        addMsg(q, 'user');
+        history.push({role:'user', content:q});
+
+        pending = true;
+        try{
+          const r = await fetch('/api/chat/', {
+            method:'POST',
+            headers:{'Content-Type':'application/json','X-CSRFToken':getCsrf()},
+            body: JSON.stringify({ messages: history.slice(-10) }) // mandamos las últimas
+          });
+          const data = await r.json();
+          if(!r.ok) throw new Error(data?.detail || `HTTP ${r.status}`);
+          const reply = data?.reply || '(sin respuesta)';
+          history.push({role:'assistant', content: reply});
+          addMsg(reply, 'bot');
+        }catch(e){
+          addMsg('Ups, no pude responder ahora. ' + e.message, 'bot');
+        }finally{
+          pending = false;
+        }
+      }
+
+      send?.addEventListener('click', ask);
+      input?.addEventListener('keydown', (ev)=>{ if(ev.key==='Enter'){ ev.preventDefault(); ask(); } });
+    })();
   </script>
 </body>
 </html>

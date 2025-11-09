@@ -4,18 +4,19 @@
 
 {% block content %}
 
-<!-- HERO con carrusel -->
-<section class="hero" style="margin:8px 0 18px">
-  <div class="carousel" id="hero-carousel" aria-label="Destacados">
-    <div class="slides">
-      <div class="slide is-active">
-        <picture>
-          <img src="{% static 'home/hero1.jpg' %}" alt="Nueva temporada urbana">
-        </picture>
-        <div class="caption">
-          <h1>Bienvenido a <strong>GAON Mercadito</strong></h1>
-          <p>Iniciá sesión para comprar o vender productos</p>
-          <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:6px">
+<!-- HERO con carrusel (pastel) -->
+<section class="section" style="margin-top:8px">
+  <div class="hero" id="hero-carousel" aria-label="Destacados" style="position:relative">
+    <div class="slides" style="position:relative; overflow:hidden; border-radius:18px; box-shadow:var(--shadow)">
+      <div class="slide is-active" style="position:relative; display:block">
+        <img src="{% static 'home/hero1.jpg' %}" alt="Nueva temporada urbana" style="width:100%; height:420px; object-fit:cover; background:#f2f6fb; display:block">
+        <div class="caption" style="
+          position:absolute; inset:auto 16px 16px 16px; background:rgba(255,255,255,.88);
+          border:1px solid var(--border); border-radius:16px; padding:14px; max-width:min(560px,92%);
+          box-shadow:var(--shadow-sm)">
+          <h1 style="margin:0 0 6px">Bienvenido a <strong>GAON Mercadito</strong></h1>
+          <p class="text-muted" style="margin:0">Iniciá sesión para comprar o vender productos</p>
+          <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px">
             {% if request.user.is_authenticated %}
               <a class="btn" href="/products/">Ir a la tienda</a>
               <a class="btn outline" href="/account/">Mi cuenta</a>
@@ -27,95 +28,98 @@
         </div>
       </div>
 
-      <div class="slide">
-        <picture>
-          <img src="{% static 'home/hero2.jpg' %}" alt="Básicos premium para todos los días">
-        </picture>
-        <div class="caption">
+      <div class="slide" style="position:relative; display:none">
+        <img src="{% static 'home/hero2.jpg' %}" alt="Básicos premium para todos los días" style="width:100%; height:420px; object-fit:cover; background:#f2f6fb; display:block">
+        <div class="caption" style="
+          position:absolute; inset:auto 16px 16px 16px; background:rgba(255,255,255,.88);
+          border:1px solid var(--border); border-radius:16px; padding:14px; max-width:min(520px,92%);
+          box-shadow:var(--shadow-sm)">
           <h2 style="margin:0 0 6px">Básicos Premium</h2>
-          <p>Calidad que se nota, precios que sorprenden</p>
-          <a class="btn outline" href="/products/?order=price_asc">Descubrir</a>
+          <p class="text-muted" style="margin:0">Calidad que se nota, precios que sorprenden</p>
+          <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px">
+            <a class="btn outline" href="/products/?order=price_asc">Descubrir</a>
+          </div>
         </div>
       </div>
 
-      <div class="slide">
-        <picture>
-          <img src="{% static 'home/hero3.jpg' %}" alt="Ofertas y combos">
-        </picture>
-        <div class="caption">
+      <div class="slide" style="position:relative; display:none">
+        <img src="{% static 'home/hero3.jpg' %}" alt="Ofertas y combos" style="width:100%; height:420px; object-fit:cover; background:#f2f6fb; display:block">
+        <div class="caption" style="
+          position:absolute; inset:auto 16px 16px 16px; background:rgba(255,255,255,.88);
+          border:1px solid var(--border); border-radius:16px; padding:14px; max-width:min(520px,92%);
+          box-shadow:var(--shadow-sm)">
           <h2 style="margin:0 0 6px">Ofertas & Combos</h2>
-          <p>Armá tu look y ahorrá con packs</p>
-          <a class="btn" href="/products/?q=promo">Aprovechar</a>
+          <p class="text-muted" style="margin:0">Armá tu look y ahorrá con packs</p>
+          <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px">
+            <a class="btn" href="/products/?q=promo">Aprovechar</a>
+          </div>
         </div>
       </div>
     </div>
 
-    <button class="ctrl prev" aria-label="Anterior">‹</button>
-    <button class="ctrl next" aria-label="Siguiente">›</button>
-    <div class="dots" aria-label="Paginación"></div>
+    <button class="ctrl prev" aria-label="Anterior" style="
+      position:absolute; top:50%; transform:translateY(-50%); left:12px;
+      background:#fff; border:1px solid var(--border); width:38px; height:38px; border-radius:12px; cursor:pointer; box-shadow:var(--shadow-sm)">‹</button>
+    <button class="ctrl next" aria-label="Siguiente" style="
+      position:absolute; top:50%; transform:translateY(-50%); right:12px;
+      background:#fff; border:1px solid var(--border); width:38px; height:38px; border-radius:12px; cursor:pointer; box-shadow:var(--shadow-sm)">›</button>
+
+    <div class="dots" aria-label="Paginación" style="display:flex; gap:6px; justify-content:center; margin-top:10px"></div>
   </div>
 </section>
 
 <!-- BENEFICIOS -->
-<section style="margin:18px 0">
-  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));">
+<section class="section" style="padding-top:14px">
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr));">
     <article class="card pad">
       <h3 style="margin:0 0 6px">Cambios fáciles</h3>
-      <p style="margin:0;color:#6b7280">Tenés 10 días para cambiar tu compra. Sin vueltas.</p>
+      <p class="text-muted" style="margin:0">Tenés 10 días para cambiar tu compra. Sin vueltas.</p>
     </article>
     <article class="card pad">
       <h3 style="margin:0 0 6px">Envíos a todo el país</h3>
-      <p style="margin:0;color:#6b7280">Recibí tu pedido donde estés, rápido y seguro.</p>
+      <p class="text-muted" style="margin:0">Recibí tu pedido donde estés, rápido y seguro.</p>
     </article>
     <article class="card pad">
       <h3 style="margin:0 0 6px">Pagá como quieras</h3>
-      <p style="margin:0;color:#6b7280">Tarjetas, débito, efectivo y Mercado Pago.</p>
+      <p class="text-muted" style="margin:0">Tarjetas, débito, efectivo y Mercado Pago.</p>
     </article>
     <article class="card pad">
       <h3 style="margin:0 0 6px">Atención cercana</h3>
-      <p style="margin:0;color:#6b7280">Estamos para ayudarte por WhatsApp e Instagram.</p>
+      <p class="text-muted" style="margin:0">Estamos para ayudarte por WhatsApp e Instagram.</p>
     </article>
   </div>
 </section>
 
 <!-- COLECCIONES DESTACADAS -->
-<section>
+<section class="section" style="padding-top:0">
   <h2 style="margin:0 0 12px">Colecciones destacadas</h2>
   <div class="grid">
     <a href="/products/?q=urban" class="card" aria-label="Ver colección Urbana">
-      <div class="imgbox" style="height:200px">
-        <img src="{% static 'home/col1.jpg' %}" alt="Colección Urbana">
-      </div>
+      <div class="imgbox" style="height:200px"><img src="{% static 'home/col1.jpg' %}" alt="Colección Urbana"></div>
       <div class="pad">
         <h3 style="margin:0 0 6px">Urbana</h3>
-        <p style="margin:0;color:#6b7280">Remeras, buzos y joggers</p>
+        <p class="text-muted" style="margin:0">Remeras, buzos y joggers</p>
       </div>
     </a>
     <a href="/products/?q=basic" class="card" aria-label="Ver colección Básicos">
-      <div class="imgbox" style="height:200px">
-        <img src="{% static 'home/col2.jpg' %}" alt="Básicos">
-      </div>
+      <div class="imgbox" style="height:200px"><img src="{% static 'home/col2.jpg' %}" alt="Básicos"></div>
       <div class="pad">
         <h3 style="margin:0 0 6px">Básicos</h3>
-        <p style="margin:0;color:#6b7280">Cortes limpios, colores neutros</p>
+        <p class="text-muted" style="margin:0">Cortes limpios, colores neutros</p>
       </div>
     </a>
     <a href="/products/?q=denim" class="card" aria-label="Ver colección Denim">
-      <div class="imgbox" style="height:200px">
-        <img src="{% static 'home/col3.jpg' %}" alt="Denim">
-      </div>
+      <div class="imgbox" style="height:200px"><img src="{% static 'home/col3.jpg' %}" alt="Denim"></div>
       <div class="pad">
         <h3 style="margin:0 0 6px">Denim</h3>
-        <p style="margin:0;color:#6b7280">Jeans y camperas para durar</p>
+        <p class="text-muted" style="margin:0">Jeans y camperas para durar</p>
       </div>
     </a>
     <a href="/products/?q=promo" class="card" aria-label="Ver Ofertas">
-      <div class="imgbox" style="height:200px">
-        <img src="{% static 'home/col4.jpg' %}" alt="Ofertas">
-      </div>
+      <div class="imgbox" style="height:200px"><img src="{% static 'home/col4.jpg' %}" alt="Ofertas"></div>
       <div class="pad">
         <h3 style="margin:0 0 6px">Ofertas</h3>
-        <p style="margin:0;color:#6b7280">Precios especiales por tiempo limitado</p>
+        <p class="text-muted" style="margin:0">Precios especiales por tiempo limitado</p>
       </div>
     </a>
   </div>
@@ -125,9 +129,9 @@
 <section class="card pad" style="margin:24px 0; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
   <div>
     <h3 style="margin:0 0 6px">¿Primera vez en GAON?</h3>
-    <p style="margin:0;color:#6b7280">Creá tu cuenta y obtené novedades y beneficios.</p>
+    <p class="text-muted" style="margin:0">Creá tu cuenta y obtené novedades y beneficios.</p>
   </div>
-  <div style="display:flex; gap:8px; flex-wrap:wrap">
+  <div class="row" style="gap:8px; flex-wrap:wrap">
     {% if request.user.is_authenticated %}
       <a class="btn outline" href="/account/">Mi cuenta</a>
       <a class="btn" href="/products/">Ver catálogo</a>
@@ -138,76 +142,32 @@
   </div>
 </section>
 
-<!-- Estilos específicos del carrusel -->
-<style>
-  .hero .slides{position:relative; overflow:hidden; border-radius:16px}
-  .hero .slide{position:relative; display:none}
-  .hero .slide.is-active{display:block}
-  .hero .slide img{width:100%; height:420px; object-fit:cover; display:block; background:#f3f4f6}
-  .hero .caption{
-    position:absolute; inset:auto 16px 16px 16px; background:rgba(255,255,255,.88);
-    border:1px solid #e5e7eb; border-radius:14px; padding:12px; max-width:min(560px, 92%);
-    box-shadow:0 10px 24px rgba(0,0,0,.06)
-  }
-  .hero .caption h1,.hero .caption h2{margin:0 0 6px}
-  .hero .ctrl{
-    position:absolute; top:50%; transform:translateY(-50%);
-    background:#fff; border:1px solid #e5e7eb; width:36px; height:36px; border-radius:10px; cursor:pointer;
-    box-shadow:0 6px 18px rgba(0,0,0,.08)
-  }
-  .hero .prev{left:12px}
-  .hero .next{right:12px}
-  .hero .dots{display:flex; gap:6px; justify-content:center; margin-top:8px}
-  .hero .dots button{
-    width:8px; height:8px; border-radius:999px; border:0; background:#d1d5db; cursor:pointer
-  }
-  .hero .dots button.is-active{background:#0a7}
-  @media (max-width: 860px){
-    .hero .slide img{height:300px}
-    .hero .caption{inset:auto 10px 10px 10px}
-  }
-</style>
-
-<!-- JS del carrusel (vanilla) -->
+<!-- JS carrusel -->
 <script>
-  (function(){
-    const root = document.getElementById('hero-carousel');
-    if(!root) return;
+(function(){
+  const root = document.getElementById('hero-carousel'); if(!root) return;
+  const slides = Array.from(root.querySelectorAll('.slide'));
+  const btnPrev = root.querySelector('.prev'); const btnNext = root.querySelector('.next');
+  const dotsWrap = root.querySelector('.dots');
 
-    const slides = Array.from(root.querySelectorAll('.slide'));
-    const btnPrev = root.querySelector('.prev');
-    const btnNext = root.querySelector('.next');
-    const dotsWrap = root.querySelector('.dots');
+  let idx = 0;
+  function render(){
+    slides.forEach((s,i)=>s.style.display = i===idx ? 'block':'none');
+    dotsWrap.querySelectorAll('button').forEach((d,i)=>d.classList.toggle('is-active', i===idx));
+  }
+  function go(n){ idx = (n + slides.length) % slides.length; render(); }
 
-    let idx = 0;
-    function render(){
-      slides.forEach((s,i)=>s.classList.toggle('is-active', i===idx));
-      dotsWrap.querySelectorAll('button').forEach((d,i)=>d.classList.toggle('is-active', i===idx));
-    }
-    function go(n){
-      idx = (n + slides.length) % slides.length;
-      render();
-    }
+  slides.forEach((_s,i)=>{ const b=document.createElement('button'); b.setAttribute('aria-label','Ir al slide '+(i+1));
+    b.style.cssText='width:8px;height:8px;border-radius:999px;border:0;background:#cbd5e1;cursor:pointer';
+    b.addEventListener('click',()=>go(i)); dotsWrap.appendChild(b); });
+  if(btnPrev) btnPrev.addEventListener('click',()=>go(idx-1));
+  if(btnNext) btnNext.addEventListener('click',()=>go(idx+1));
 
-    // dots
-    slides.forEach((_s,i)=>{
-      const b=document.createElement('button');
-      b.setAttribute('aria-label', 'Ir al slide '+(i+1));
-      b.addEventListener('click', ()=>go(i));
-      dotsWrap.appendChild(b);
-    });
-
-    // controles
-    btnPrev.addEventListener('click', ()=>go(idx-1));
-    btnNext.addEventListener('click', ()=>go(idx+1));
-
-    // autoplay con pausa al hover
-    let t=setInterval(()=>go(idx+1), 5000);
-    root.addEventListener('mouseenter', ()=>clearInterval(t));
-    root.addEventListener('mouseleave', ()=>t=setInterval(()=>go(idx+1), 5000));
-
-    render();
-  })();
+  let t=setInterval(()=>go(idx+1), 5000);
+  root.addEventListener('mouseenter', ()=>clearInterval(t));
+  root.addEventListener('mouseleave', ()=>t=setInterval(()=>go(idx+1), 5000));
+  render();
+})();
 </script>
 
 {% endblock %}

@@ -1,82 +1,87 @@
 {% extends "base.html" %}
+{% block title %}Productos — GAON{% endblock %}
+
 {% block content %}
-<h1>Productos</h1>
-
-<form class="search" method="get">
-  <input type="text" name="q" value="{{ q }}" placeholder="Buscar productos">
-  <input type="number" step="0.01" name="min_price" value="{{ min_price }}" placeholder="Precio min">
-  <input type="number" step="0.01" name="max_price" value="{{ max_price }}" placeholder="Precio max">
-  <select name="category">
-    <option value="">Todas</option>
-    {% for c in categories %}
-    <option value="{{ c.slug }}" {% if category == c.slug %}selected{% endif %}>{{ c.nombre }}</option>
-    {% endfor %}
-  </select>
-  <select name="in_stock">
-    <option value="" {% if not in_stock %}selected{% endif %}>Stock: todos</option>
-    <option value="true" {% if in_stock == 'true' %}selected{% endif %}>Con stock</option>
-    <option value="false" {% if in_stock == 'false' %}selected{% endif %}>Sin stock</option>
-  </select>
-  <select name="order">
-    <option value="" {% if not order %}selected{% endif %}>Más nuevos</option>
-    <option value="oldest" {% if order == 'oldest' %}selected{% endif %}>Más antiguos</option>
-    <option value="price_asc" {% if order == 'price_asc' %}selected{% endif %}>Precio ↑</option>
-    <option value="price_desc" {% if order == 'price_desc' %}selected{% endif %}>Precio ↓</option>
-    <option value="name" {% if order == 'name' %}selected{% endif %}>Nombre A→Z</option>
-  </select>
-  <button class="btn" type="submit">Filtrar</button>
-</form>
-
-<div class="grid">
-  {% for p in page_obj %}
-  <div class="card">
-    <a href="/products/{{ p.id }}/">
-      <div class="imgbox">
-        {% if p.imagen %}
-          <img src="{{ p.imagen.url }}" alt="{{ p.nombre }}">
-        {% else %}
-          <div class="ph" aria-label="Sin imagen">
-            <!-- Ícono simple -->
-            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm0 2v9.586l-3.293-3.293a1 1 0 0 0-1.414 0L10 15.586l-2.293-2.293a1 1 0 0 0-1.414 0L5 14.586V5h14ZM5 19v-2.586l2.293-2.293 2.293 2.293a1 1 0 0 0 1.414 0L15.586 12 19 15.414V19H5Zm4-9a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
-            </svg>
-            <small>Sin imagen</small>
-          </div>
-        {% endif %}
-      </div>
-    </a>
-    <div class="pad">
-      <div class="row" style="justify-content:space-between">
-        <div class="price">${{ p.precio }}</div>
-        <small>{{ p.creado_en|date:"d/m/Y" }}</small>
-      </div>
-      <h3 style="margin:.4rem 0"><a href="/products/{{ p.id }}/">{{ p.nombre }}</a></h3>
-      <small>Categoría: {{ p.category|default:"-" }} | Stock: {{ p.stock }}</small>
-      <div class="row" style="margin-top:10px">
-        <button class="btn add" data-id="{{ p.id }}">Agregar</button>
-        <a class="btn outline" href="/products/{{ p.id }}/">Ver</a>
-        {% if request.user.is_authenticated %}
-          {% if request.user.is_staff or p.user_id == request.user.id %}
-            <a class="btn outline" href="/products/manage/{{ p.id }}/edit/">Editar</a>
-          {% endif %}
-        {% endif %}
-      </div>
-    </div>
+<section class="section">
+  <div class="row" style="justify-content:space-between; gap:12px; flex-wrap:wrap">
+    <h1 style="margin:0">Productos</h1>
+    <form class="row" method="get" style="gap:8px; flex-wrap:wrap">
+      <input type="text" name="q" value="{{ q }}" placeholder="Buscar productos">
+      <input type="number" step="0.01" name="min_price" value="{{ min_price }}" placeholder="Precio mínimo" style="width:150px">
+      <input type="number" step="0.01" name="max_price" value="{{ max_price }}" placeholder="Precio máximo" style="width:150px">
+      <select name="category">
+        <option value="">Todas</option>
+        {% for c in categories %}
+          <option value="{{ c.slug }}" {% if category == c.slug %}selected{% endif %}>{{ c.nombre }}</option>
+        {% endfor %}
+      </select>
+      <select name="in_stock" style="width:150px">
+        <option value="" {% if not in_stock %}selected{% endif %}>Stock: todos</option>
+        <option value="true" {% if in_stock == 'true' %}selected{% endif %}>Con stock</option>
+        <option value="false" {% if in_stock == 'false' %}selected{% endif %}>Sin stock</option>
+      </select>
+      <select name="order" style="width:160px">
+        <option value="" {% if not order %}selected{% endif %}>Más nuevos</option>
+        <option value="oldest" {% if order == 'oldest' %}selected{% endif %}>Más antiguos</option>
+        <option value="price_asc" {% if order == 'price_asc' %}selected{% endif %}>Precio ↑</option>
+        <option value="price_desc" {% if order == 'price_desc' %}selected{% endif %}>Precio ↓</option>
+        <option value="name" {% if order == 'name' %}selected{% endif %}>Nombre A→Z</option>
+      </select>
+      <button class="btn" type="submit">Filtrar</button>
+    </form>
   </div>
-  {% empty %}
-  <p>No hay productos.</p>
-  {% endfor %}
-</div>
 
-<div class="row" style="justify-content:center;margin-top:16px">
-  {% if page_obj.has_previous %}
-    <a class="btn outline" href="?q={{ q }}&min_price={{ min_price }}&max_price={{ max_price }}&order={{ order }}&category={{ category }}&in_stock={{ in_stock }}&page={{ page_obj.previous_page_number }}">Anterior</a>
-  {% endif %}
-  <span style="padding:8px 12px">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
-  {% if page_obj.has_next %}
-    <a class="btn outline" href="?q={{ q }}&min_price={{ min_price }}&max_price={{ max_price }}&order={{ order }}&category={{ category }}&in_stock={{ in_stock }}&page={{ page_obj.next_page_number }}">Siguiente</a>
-  {% endif %}
-</div>
+  <div class="grid">
+    {% for p in page_obj %}
+      <div class="card">
+        <a href="/products/{{ p.id }}/" aria-label="Ver {{ p.nombre }}">
+          <div class="imgbox" style="height:220px">
+            {% if p.imagen %}
+              <img src="{{ p.imagen.url }}" alt="{{ p.nombre }}">
+            {% else %}
+              <div class="ph" aria-label="Sin imagen">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width:36px;height:36px;opacity:.7">
+                  <path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm0 2v9.586l-3.293-3.293a1 1 0 0 0-1.414 0L10 15.586l-2.293-2.293a1 1 0 0 0-1.414 0L5 14.586V5h14ZM5 19v-2.586l2.293-2.293 2.293 2.293a1 1 0 0 0 1.414 0L15.586 12 19 15.414V19H5Zm4-9a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
+                </svg>
+                <small class="text-muted">Sin imagen</small>
+              </div>
+            {% endif %}
+          </div>
+        </a>
+        <div class="pad">
+          <div class="row" style="justify-content:space-between">
+            <div class="price">{{ p.precio|floatformat:0 }}</div>
+            <small class="text-muted">{{ p.creado_en|date:"d/m/Y" }}</small>
+          </div>
+          <h3 style="margin:.4rem 0"><a href="/products/{{ p.id }}/">{{ p.nombre }}</a></h3>
+          <small class="text-muted">Categoría: {{ p.category|default:"-" }} • Stock: {{ p.stock }}</small>
+          <div class="row" style="margin-top:10px; gap:8px; flex-wrap:wrap">
+            <button class="btn add" data-id="{{ p.id }}">Agregar</button>
+            <a class="btn outline" href="/products/{{ p.id }}/">Ver</a>
+            {% if request.user.is_authenticated %}
+              {% if request.user.is_staff or p.user_id == request.user.id %}
+                <a class="btn outline" href="/products/manage/{{ p.id }}/edit/">Editar</a>
+              {% endif %}
+            {% endif %}
+            <a class="btn outline" href="{% url 'compare-prices' %}?q={{ p.nombre|urlencode }}">Comparar precio</a>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="card pad">No hay productos.</div>
+    {% endfor %}
+  </div>
+
+  <div class="row" style="justify-content:center; gap:8px; margin-top:16px">
+    {% if page_obj.has_previous %}
+      <a class="btn outline" href="?q={{ q }}&min_price={{ min_price }}&max_price={{ max_price }}&order={{ order }}&category={{ category }}&in_stock={{ in_stock }}&page={{ page_obj.previous_page_number }}">Anterior</a>
+    {% endif %}
+    <span style="padding:8px 12px">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+      <a class="btn outline" href="?q={{ q }}&min_price={{ min_price }}&max_price={{ max_price }}&order={{ order }}&category={{ category }}&in_stock={{ in_stock }}&page={{ page_obj.next_page_number }}">Siguiente</a>
+    {% endif %}
+  </div>
+</section>
 
 <script>
 function getCsrf(){const n='csrftoken=';return (document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith(n))||'').slice(n.length)||''}
@@ -86,10 +91,7 @@ async function addToCart(id,qty){
     headers:{'Content-Type':'application/json','X-CSRFToken':getCsrf(),'X-Requested-With':'fetch'},
     body:JSON.stringify({product_id:id,qty})
   });
-  const data = await r.json();
-  const total = (data && typeof data.total_qty!=='undefined')
-    ? Number(data.total_qty||0)
-    : (Array.isArray(data.items)?data.items.reduce((a,b)=>a+Number(b.qty||0),0):0);
+  await r.json().catch(()=>{});
   await window.GAON_CART?.refresh?.();
   window.GAON_UI?.toast('Agregado al carrito');
 }

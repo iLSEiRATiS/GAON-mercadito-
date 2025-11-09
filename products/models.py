@@ -17,9 +17,6 @@ class Category(models.Model):
         return self.nombre
 
     def save(self, *args, **kwargs):
-        """
-        Autogenera slug único en cada alta/edición si cambia el nombre.
-        """
         base = slugify(self.nombre or "")
         if not base:
             base = "categoria"
@@ -36,19 +33,13 @@ class Category(models.Model):
 
 
 def product_upload_to(instance, filename):
-    """
-    Compatible con la migración 0001:
-    upload_to=products.models.product_upload_to
-
-    Genera un nombre único en /media/products/<uuid>.<ext>
-    """
     name, ext = os.path.splitext(filename)
     ext = (ext or "").lower() or ".jpg"
     return f"products/{uuid4().hex}{ext}"
 
 
 class Product(models.Model):
-    # 'user' opcional para permitir importaciones sin dueño
+    # 'user' opcional para poder importar sin dueño
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -62,10 +53,9 @@ class Product(models.Model):
     descripcion = models.TextField(blank=True)
     stock = models.IntegerField(default=0)
 
-    # Imagen local (si descargás archivos)
+    # Imagen local (opcional) + URL remota (FakeStore)
     imagen = models.ImageField(upload_to=product_upload_to, blank=True, null=True)
-    # Imagen remota (cuando no descargás y querés linkear directo desde FakeStore)
-    image_url = models.URLField(blank=True, null=True)
+    image_url = models.URLField(blank=True)  # ⬅️ clave para usar imágenes reales de FakeStore
 
     activo = models.BooleanField(default=True)
     creado_en = models.DateTimeField(auto_now_add=True)
