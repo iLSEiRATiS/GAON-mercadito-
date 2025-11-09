@@ -32,6 +32,56 @@
         <a class="btn outline" href="{% url 'compare-prices' %}?q={{ p.nombre|urlencode }}">Comparar precio</a>
       </div>
 
+            <!-- === Solicitar presupuesto (PDF) === -->
+      <div class="card" style="margin-top:16px; padding:14px 16px; border-radius:16px">
+        <h2 style="font-size:1rem; margin:0 0 4px">¿Necesitás un presupuesto en PDF?</h2>
+        <p class="text-muted" style="margin:0 0 10px">
+          Te generamos un PDF para este producto y te lo enviamos al correo que indiques.
+        </p>
+
+        <div style="display:flex; flex-direction:column; gap:8px">
+          <label for="presu-email" class="text-muted" style="font-size:.85rem">
+            Email de contacto
+          </label>
+          <input
+            id="presu-email"
+            type="email"
+            placeholder="tu@email.com"
+            style="max-width:360px"
+          >
+
+          <label for="presu-msg" class="text-muted" style="font-size:.85rem">
+            Comentario (opcional)
+          </label>
+          <textarea
+            id="presu-msg"
+            rows="2"
+            placeholder="Ej: cantidad, aclaraciones, horario de contacto..."
+            style="max-width:420px; resize:vertical"
+          ></textarea>
+
+          <div class="row" style="gap:8px; flex-wrap:wrap; margin-top:4px">
+            <button
+              type="button"
+              class="btn outline"
+              onclick="solicitarPresupuesto()"
+            >
+              Solicitar presupuesto
+            </button>
+
+            <a
+              id="presu-link"
+              href="#"
+              target="_blank"
+              style="display:none; font-size:.9rem; text-decoration:underline"
+            >
+              Ver / descargar último PDF generado
+            </a>
+          </div>
+        </div>
+      </div>
+      <!-- === /Solicitar presupuesto === -->
+
       {% if request.user.is_authenticated %}
         {% if request.user.is_staff or p.user_id == request.user.id %}
           <div class="row" style="gap:8px; margin-top:12px; flex-wrap:wrap">
@@ -56,5 +106,86 @@ async function add(){
   window.GAON_CART?.refresh?.();
   window.GAON_UI?.toast('Agregado al carrito');
 }
+async function solicitarPresupuesto(){
+  const emailInput = document.getElementById('presu-email');
+  const msgInput   = document.getElementById('presu-msg');
+  const linkEl     = document.getElementById('presu-link');
+
+  const email = (emailInput?.value || '').trim();
+  const mensaje = (msgInput?.value || '').trim();
+
+  if(!email){
+    window.GAON_UI?.toast?.('Ingresá un email para el presupuesto');
+    emailInput?.focus();
+    return;
+  }
+
+  const payload = {
+    producto: "{{ p.nombre|escapejs }}",
+    email: email,
+    mensaje: mensaje || `Presupuesto solicitado desde la ficha del producto ID {{ p.id }}`,
+  };
+
+  try{
+    const resp = await fetch('/api/presupuestos/create/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCsrf(),
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if(!resp.ok){
+      window.GAON_UI?.toast?.('Error al solicitar presupuesto');
+      return;
+    }
+
+    const data = await resp.json();
+
+    window.GAON_UI?.toast?.('Presupuesto generado. Revisá tu correo / Telegram.');
+
+    // Mostrar link de descarga al PDF
+    if(linkEl && data.id){
+      linkEl.href = `/presupuestos/${data.id}/pdf/`;
+      linkEl.style.display = 'inline-block';
+    }
+  }catch(e){
+    console.error(e);
+    window.GAON_UI?.toast?.('No se pudo conectar para generar el presupuesto');
+  }
+}
+async function prefillPresupuestoEmailFromProfile(){
+  const emailInput = document.getElementById('presu-email');
+  if (!emailInput) return;
+
+  try{
+    // Si no hay token, no hacemos nada
+    if (!window.GAON_AUTH?.hasToken?.()) return;
+
+    const resp = await fetch('/api/auth/me/', {
+      headers: { ...(window.GAON_AUTH.authHeader?.() || {}) },
+      credentials: 'same-origin',
+    });
+
+    if (!resp.ok) return;
+
+    const data = await resp.json().catch(() => ({}));
+    const email = data.email || '';
+
+    // Solo completar si el campo está vacío
+    if (email && !emailInput.value){
+      emailInput.value = email;
+    }
+  }catch(e){
+    console.error('No se pudo obtener el perfil para autocompletar email', e);
+  }
+}
+
+// Esperamos a que cargue todo (incluido el script de base.html que define GAON_AUTH)
+window.addEventListener('load', () => {
+  prefillPresupuestoEmailFromProfile();
+});
+
 </script>
 {% endblock %}

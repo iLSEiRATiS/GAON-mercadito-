@@ -60,7 +60,7 @@ urlpatterns = [
         "api/scraping/",
         include(("scraping.api.urls", "scraping_api"), namespace="scraping_api"),
     ),
-    path("admin/", admin.site.urls),
+    path("api/presupuestos/", include("presupuestos.api.urls")),
 
     # ---------- Web (HTML) ----------
     path("products/", include("products.web_urls")),
@@ -80,6 +80,9 @@ urlpatterns = [
 
     # Comparador de precios (HTML)
     path("comparar/", compare_prices_view, name="compare-prices"),
+
+    # Web de presupuestos (descarga PDF)
+    path("presupuestos/", include("presupuestos.urls")),
 
     # ---------- SEO ----------
     path("robots.txt", robots_txt, name="robots"),
