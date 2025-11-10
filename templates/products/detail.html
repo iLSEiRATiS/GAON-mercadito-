@@ -94,6 +94,8 @@
   </div>
 </section>
 
+{% include 'foro/product_comments.html' %}
+
 <script>
 function getCsrf(){ const n='csrftoken='; return (document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith(n))||'').slice(n.length)||'' }
 async function add(){

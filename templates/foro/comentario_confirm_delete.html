@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Confirmar eliminación — Comentario{% endblock %}
+
+{% block content %}
+<section class="section">
+  <h1>Eliminar comentario</h1>
+  <div class="card pad" style="max-width:720px">
+    <p>Estás por eliminar este comentario. Esta acción no se puede deshacer.</p>
+    <div style="margin-top:12px">{{ comentario.texto|linebreaksbr }}</div>
+
+    <form method="post" style="margin-top:14px">{% csrf_token %}
+      <button class="btn" type="submit">Confirmar eliminación</button>
+      <a class="btn outline" href="/account/">Cancelar</a>
+    </form>
+  </div>
+</section>
+<script>
+  (function(){
+    function getCookie(name){
+      const parts = document.cookie.split(';').map(c=>c.trim());
+      const match = parts.find(p => p.startsWith(name + '='));
+      return match ? decodeURIComponent(match.split('=')[1]) : '';
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+      const forms = Array.from(document.querySelectorAll('form[method="post"]'));
+      if(forms.length === 0) return;
+
+      forms.forEach(form => {
+        form.addEventListener('submit', function(){
+          try{
+            const cookieVal = getCookie('csrftoken');
+            const input = form.querySelector('input[name="csrfmiddlewaretoken"]');
+            if(input && cookieVal && input.value !== cookieVal){
+              input.value = cookieVal;
+            }
+          }catch(e){ console.error('Error syncing csrf token on submit:', e); }
+        });
+      });
+    });
+  })();
+</script>
+{% endblock %}

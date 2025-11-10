@@ -3,11 +3,12 @@ from .models import Mensaje
 
 class MensajeSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="user.username", read_only=True)
+    is_bot = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Mensaje
-        fields = ["id", "user", "username", "texto", "creado_en"]
-        read_only_fields = ["id", "user", "username", "creado_en"]
+        fields = ["id", "user", "username", "texto", "creado_en", "is_bot"]
+        read_only_fields = ["id", "user", "username", "creado_en", "is_bot"]
 
     def create(self, validated_data):
         request = self.context.get("request")

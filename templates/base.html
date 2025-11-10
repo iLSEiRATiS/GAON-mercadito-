@@ -130,12 +130,14 @@
       background: #fafcff;
     }
     .msg{
-      max-width:90%; padding:10px 12px; border-radius:12px; white-space:pre-wrap;
+      max-width:85%; padding:10px 12px; border-radius:12px; white-space:pre-wrap;
       box-shadow:0 6px 16px rgba(28,66,104,.05); border:1px solid var(--border);
-      background:#fff;
+      background:#fff; color:var(--fg); font-size:14px; line-height:1.3;
     }
-    .msg.user{ align-self:flex-end; background:#e9f5ff; border-color:#cfe9ff }
-    .msg.bot { align-self:flex-start; }
+    /* Mensaje enviado por el usuario: alineado a la derecha y color distintivo */
+  .msg.user{ align-self:flex-end; background:var(--brand-50); border-color:rgba(26,140,255,.15); color:var(--fg); font-weight:600 }
+  /* Mensaje del bot/asistente: alineado a la izquierda y color neutro (más contraste) */
+  .msg.bot { align-self:flex-start; background:#f1f5f9; border-color:#e6eef7; color:var(--fg) }
     .chat-foot{ display:flex; gap:8px; padding:10px; border-top:1px solid var(--border); background:#fff }
     .chat-input{ flex:1 }
     .chat-send{ white-space:nowrap }
@@ -158,9 +160,10 @@
 
       <div class="drawer" id="drawer">
         <nav class="nav" id="nav-auth" aria-label="Navegación principal">
-          <a href="/products/" data-link>Productos</a>
+          <a href="/products/" data-link data-auth style="display:none">Productos</a>
           <a href="/about/" data-link>Nosotros</a>
-          <a class="nav-link" href="{% url 'compare-prices' %}">Comparar precios</a>
+          <a href="/foro/" data-link data-auth style="display:none">Foro</a>
+          <a class="nav-link" href="{% url 'compare-prices' %}" data-auth style="display:none">Comparar precios</a>
           
           <!-- Visible solo para invitados -->
           <a href="/login/" data-guest data-link>Iniciar sesión</a>
@@ -170,9 +173,9 @@
           <a href="/account/" id="my-account" data-auth style="display:none" data-link>Mi cuenta</a>
           <a href="/#" id="logout" data-auth style="display:none" data-link>Salir</a>
         </nav>
-        </nav>
+  </nav>
 
-        <a href="/cart/" class="cart-link" aria-label="Carrito">
+  <a href="/cart/" class="cart-link" aria-label="Carrito" data-auth style="display:none">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
             <path d="M3 3h2l.4 2M7 13h9l3-8H6.4M7 13L5.4 5M7 13l-2 7h14m-9 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm8 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"
                   stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -228,7 +231,7 @@
       <button id="chat-close" style="background:none;border:0;color:#fff;font-size:20px;cursor:pointer;">×</button>
     </div>
 
-    <div id="chat-messages" style="flex:1; padding:10px; overflow-y:auto; font-size:14px;"></div>
+  <div id="chat-messages" class="chat-body"></div>
 
     <form id="chat-form" style="display:flex; border-top:1px solid #eee;">
       <input id="chat-input" type="text" placeholder="Escribe un mensaje..." required
@@ -348,7 +351,16 @@
     const chatInput = document.getElementById('chat-input');
     const chatMsgs = document.getElementById('chat-messages');
 
-    chatFab.onclick = ()=>{ chatBox.style.display = 'flex'; chatFab.style.display='none'; loadChat(); };
+    chatFab.onclick = async ()=>{ 
+      chatBox.style.display = 'flex'; chatFab.style.display='none';
+      const msgs = await loadChat();
+      // Si no hay mensajes, pedir al backend que cree un mensaje de bienvenida del bot
+      try{
+        if(Array.isArray(msgs) && msgs.length === 0){
+          await createWelcome();
+        }
+      }catch(_){/* no bloquear la apertura si falla */}
+    };
     chatClose.onclick = ()=>{ chatBox.style.display = 'none'; chatFab.style.display='flex'; };
 
     async function loadChat(){
@@ -358,8 +370,25 @@
         if(!r.ok) throw new Error('HTTP '+r.status);
         const msgs = await r.json();
         renderChat(msgs);
+        return msgs;
       }catch(e){
         chatMsgs.innerHTML = `<div style="color:#b91c1c;text-align:center">Error al cargar chat<br>${e.message}</div>`;
+        return [];
+      }
+    }
+
+    async function createWelcome(){
+      try{
+        const r = await fetch('/api/chat/welcome/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(window.GAON_AUTH?.authHeader?.()||{}) },
+          credentials: 'same-origin'
+        });
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        // refrescar la conversación para mostrar el mensaje recién creado
+        await loadChat();
+      }catch(e){
+        console.warn('No se pudo crear mensaje de bienvenida', e);
       }
     }
 
@@ -367,16 +396,10 @@
       chatMsgs.innerHTML = '';
       msgs.forEach(m=>{
         const div = document.createElement('div');
-        div.style.margin = '8px 0';
-        div.style.padding = '6px 10px';
-        div.style.borderRadius = '10px';
-        div.style.maxWidth = '80%';
-        if(m.username === window.CURRENT_USER){
-          div.style.background = '#dcfce7';
-          div.style.alignSelf = 'flex-end';
-        } else {
-          div.style.background = '#f1f5f9';
-        }
+  // Añadir clases semánticas para que el CSS determine alineado y colores.
+  // Priorizar el flag `is_bot` enviado por el backend si existe.
+  const isBot = Boolean(m.is_bot);
+  div.className = 'msg ' + (isBot ? 'bot' : (m.username === window.CURRENT_USER ? 'user' : 'bot'));
         div.textContent = m.texto;
         chatMsgs.appendChild(div);
       });
@@ -389,16 +412,11 @@
       if(!texto) return;
       chatInput.value = '';
 
-      // Pinta el mensaje del usuario inmediatamente (optimista)
-      const bubble = document.createElement('div');
-      bubble.style.margin = '8px 0';
-      bubble.style.padding = '6px 10px';
-      bubble.style.borderRadius = '10px';
-      bubble.style.maxWidth = '80%';
-      bubble.style.background = '#dcfce7';
-      bubble.style.alignSelf = 'flex-end';
-      bubble.textContent = texto;
-      chatMsgs.appendChild(bubble);
+  // Pinta el mensaje del usuario inmediatamente (optimista)
+  const bubble = document.createElement('div');
+  bubble.className = 'msg user';
+  bubble.textContent = texto;
+  chatMsgs.appendChild(bubble);
       chatMsgs.scrollTop = chatMsgs.scrollHeight;
 
       try{

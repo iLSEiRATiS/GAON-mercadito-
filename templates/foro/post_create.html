@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Crear publicación — Foro{% endblock %}
+
+{% block content %}
+<section class="section">
+  <h1>Crear publicación</h1>
+  <p class="text-muted">Compartí algo con la comunidad.</p>
+
+  <div class="card pad" style="max-width:800px">
+    <form method="post">{% csrf_token %}
+      {{ form.as_p }}
+      <div style="margin-top:8px">
+        <button class="btn" type="submit">{% if is_edit %}Actualizar{% else %}Publicar{% endif %}</button>
+        <a class="btn outline" href="{% url 'foro:posts' %}">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</section>
+  <script>
+    (function(){
+      function getCookie(name){
+        const parts = document.cookie.split(';').map(c=>c.trim());
+        const match = parts.find(p => p.startsWith(name + '='));
+        return match ? decodeURIComponent(match.split('=')[1]) : '';
+      }
+
+      document.addEventListener('DOMContentLoaded', function(){
+        const forms = Array.from(document.querySelectorAll('form[method="post"]'));
+        if(forms.length === 0) return;
+
+        forms.forEach(form => {
+          form.addEventListener('submit', function(){
+            try{
+              const cookieVal = getCookie('csrftoken');
+              const input = form.querySelector('input[name="csrfmiddlewaretoken"]');
+              if(input && cookieVal && input.value !== cookieVal){
+                input.value = cookieVal;
+              }
+            }catch(e){ console.error('Error syncing csrf token on submit:', e); }
+          });
+        });
+      });
+    })();
+  </script>
+{% endblock %}

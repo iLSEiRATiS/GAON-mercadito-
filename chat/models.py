@@ -9,6 +9,7 @@ class Mensaje(models.Model):
     )
     texto = models.TextField()
     creado_en = models.DateTimeField(auto_now_add=True)
+    is_bot = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["creado_en"]  # listado cronológico ascendente

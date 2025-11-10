@@ -6,6 +6,8 @@ import logging
 from .models import Mensaje
 from .serializers import MensajeSerializer
 from .ai import generate_reply, GeminiUnavailable
+from rest_framework.views import APIView
+from rest_framework import permissions
 
 log = logging.getLogger(__name__)
 
@@ -34,7 +36,8 @@ class ChatListCreateView(generics.ListCreateAPIView):
         # 2) Intentar generar y guardar la respuesta del bot (si hay key)
         try:
             reply_text = generate_reply(user_msg.texto)
-            Mensaje.objects.create(user=request.user, texto=reply_text)
+            # Guardar la respuesta del asistente marcada como is_bot=True
+            Mensaje.objects.create(user=request.user, texto=reply_text, is_bot=True)
         except GeminiUnavailable as e:
             # No explotes la request: guarda el del usuario, logueá el aviso
             log.warning("[CHAT] Gemini no disponible: %s", e)
@@ -44,3 +47,17 @@ class ChatListCreateView(generics.ListCreateAPIView):
         # 3) Devolver SOLO el mensaje creado del usuario (compatibilidad con tu front)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+class WelcomeView(APIView):
+    """Crea un mensaje de bienvenida generado por el asistente para el usuario.
+
+    POST /api/chat/welcome/ -> crea Mensaje(is_bot=True) y lo devuelve.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        welcome_text = "¡Hola! Soy el asistente de GAON. ¿En qué puedo ayudarte hoy?"
+        msg = Mensaje.objects.create(user=request.user, texto=welcome_text, is_bot=True)
+        ser = MensajeSerializer(msg, context={"request": request})
+        return Response(ser.data, status=status.HTTP_201_CREATED)

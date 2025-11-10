@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}{{ post.titulo }} — Foro{% endblock %}
+
+{% block content %}
+<section class="section">
+  <a href="{% url 'foro:posts' %}">← Volver a publicaciones</a>
+  <div style="margin-top:12px" class="card pad">
+    <h1 style="margin:0 0 8px">{{ post.titulo }}</h1>
+    <div class="text-muted" style="font-size:.9rem">por {{ post.autor }} · {{ post.creado_en|date:"SHORT_DATETIME_FORMAT" }}</div>
+    {% if post.producto %}
+      <div style="margin-top:8px"><a class="btn outline" href="/products/{{ post.producto.id }}/">Producto relacionado</a></div>
+    {% endif %}
+
+    <div style="margin-top:12px; white-space:pre-wrap">{{ post.contenido }}</div>
+  </div>
+</section>
+{% endblock %}

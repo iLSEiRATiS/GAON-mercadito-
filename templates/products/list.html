@@ -5,6 +5,10 @@
 <section class="section">
   <div class="row" style="justify-content:space-between; gap:12px; flex-wrap:wrap">
     <h1 style="margin:0">Productos</h1>
+    <!-- El botón se renderiza siempre en el DOM pero se muestra solo para usuarios autenticados.
+         Usamos data-auth y style="display:none" para que el script global (setupNav) lo muestre
+         cuando exista token en localStorage o sesión Django. -->
+    <a class="btn" href="/products/manage/new/" data-auth style="display:none">Crear producto</a>
     <form class="row" method="get" style="gap:8px; flex-wrap:wrap">
       <input type="text" name="q" value="{{ q }}" placeholder="Buscar productos">
       <input type="number" step="0.01" name="min_price" value="{{ min_price }}" placeholder="Precio mínimo" style="width:150px">
