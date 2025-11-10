@@ -14,7 +14,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
 SECRET_KEY = env("SECRET_KEY", default="dev-secret-key-gaon")
 DEBUG = env("DEBUG")
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["127.0.0.1", "localhost"])
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["127.0.0.0", "localhost"])
 
 INSTALLED_APPS = [
 
@@ -200,6 +200,26 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:8000",
     "http://localhost:8000",
 ]
+
+# Si SITE_URL está configurada (p. ej. en Render), agregar su host a
+# ALLOWED_HOSTS y su origen (scheme://host) a CSRF_TRUSTED_ORIGINS para evitar
+# que Django responda "Bad Request (400)" por host no permitido.
+try:
+    from urllib.parse import urlparse
+
+    if SITE_URL:
+        parsed = urlparse(SITE_URL)
+        host = parsed.netloc
+        if host:
+            if host not in ALLOWED_HOSTS:
+                ALLOWED_HOSTS.append(host)
+            origin = f"{parsed.scheme or 'https'}://{host}"
+            if origin not in CSRF_TRUSTED_ORIGINS:
+                CSRF_TRUSTED_ORIGINS.append(origin)
+except Exception:
+    # no bloquear la carga si algo falla; la configuración se puede ajustar
+    # manualmente mediante variables de entorno en el servicio.
+    pass
 
 GEMINI_API_KEY = env("GEMINI_API_KEY", default="")
 GEMINI_MODEL = env("GEMINI_MODEL", default="gemini-1.5-flash-002")
