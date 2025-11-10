@@ -48,6 +48,8 @@ urlpatterns = [
     # ---------- API (Docs) ----------
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    # Ruta adicional para la UI de Swagger en /swagger/ (útil para despliegues o convenciones)
+    path("swagger/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui-root"),
 
     # ---------- API (Endpoints) ----------
     path("api/users/", include("users.api.urls")),
