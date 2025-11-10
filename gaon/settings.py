@@ -135,6 +135,37 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Optional: uso de S3 para archivos subidos (MEDIA) en producción.
+# Para activarlo, define USE_S3=True y las variables AWS_* en el entorno.
+USE_S3 = env.bool("USE_S3", default=False)
+if USE_S3:
+    # Requiere django-storages y boto3 en requirements.txt
+    INSTALLED_APPS.append('storages')
+    AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID', default='')
+    AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY', default='')
+    AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME', default='')
+    AWS_S3_REGION_NAME = env('AWS_S3_REGION_NAME', default='')
+    AWS_S3_CUSTOM_DOMAIN = env('AWS_S3_CUSTOM_DOMAIN', default='')
+
+    if not AWS_S3_CUSTOM_DOMAIN and AWS_STORAGE_BUCKET_NAME:
+        AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
+
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    # Media URL should point to the bucket (ensure trailing slash)
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN.rstrip('/')}/" if AWS_S3_CUSTOM_DOMAIN else MEDIA_URL
+
+# Opcional: soporte para Cloudinary (rápido de configurar y con CDN). Para usarlo,
+# define USE_CLOUDINARY=True y CLOUDINARY_URL en las Environment Variables.
+USE_CLOUDINARY = env.bool("USE_CLOUDINARY", default=False)
+if USE_CLOUDINARY:
+    # Requiere django-cloudinary-storage y cloudinary
+    INSTALLED_APPS.extend(["cloudinary", "cloudinary_storage"]) if "cloudinary" not in INSTALLED_APPS else None
+    CLOUDINARY_URL = env("CLOUDINARY_URL", default="")
+    # Storage backend para archivos subidos por usuarios
+    DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+    # Cloudinary devuelve URLs absolutas; MEDIA_URL puede dejarse como "/media/"
+    MEDIA_URL = env("MEDIA_URL", default=MEDIA_URL)
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Sesión automática: duración en segundos (30 minutos)
