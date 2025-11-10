@@ -1,0 +1,38 @@
+# Ejemplo render.yaml para desplegar en Render using Dockerfile
+# Ajustá nombres, branch y region según tu cuenta
+
+services:
+  - type: web
+    name: gaon-mercadito-web
+    env: docker
+    plan: starter
+    branch: florencia
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    instanceType: starter
+    autoDeploy: true
+    envVars: # puedes configurar variables sensibles en el panel de Render (recomendado)
+      - key: DJANGO_SETTINGS_MODULE
+        value: gaon.settings
+      - key: SECRET_KEY
+        scope: secret
+      - key: DEBUG
+        value: 'False'
+      - key: DATABASE_URL
+        scope: secret
+      - key: SITE_URL
+        scope: secret
+
+databases:
+  - name: gaon-db
+    engine: postgresql
+    plan: starter
+    region: oregon
+    # el panel de Render te dará la DATABASE_URL para poner en env vars
+
+# Opcional: assets/static site para servir archivos estáticos si no quieres que Gunicorn lo haga
+# staticSites:
+#  - name: gaon-static
+#    plan: free
+#    buildCommand: ""
+#    publishDirectory: "public"

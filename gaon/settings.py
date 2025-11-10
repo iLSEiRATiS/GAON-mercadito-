@@ -56,6 +56,8 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'allauth.account.middleware.AccountMiddleware', 
+    # Auto-logout middleware: cierra sesión tras inactividad
+    'users.middleware.AutoLogoutMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -130,6 +132,10 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Sesión automática: duración en segundos (30 minutos)
+SESSION_COOKIE_AGE = 30 * 60  # 1800 segundos
+
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
