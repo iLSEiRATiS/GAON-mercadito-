@@ -2,8 +2,8 @@ from django.db import models
 from rest_framework import viewsets, permissions, filters
 from rest_framework.request import Request
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
-from products.models import Product, Category
-from .serializers import ProductSerializer, CategorySerializer
+from products.models import Product
+from .serializers import ProductSerializer
 from rest_framework.pagination import PageNumberPagination
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
@@ -17,17 +17,12 @@ class SmallPagination(PageNumberPagination):
     page_size_query_param = "page_size"
     max_page_size = 100
 
-class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Category.objects.order_by('nombre')
-    serializer_class = CategorySerializer
-    permission_classes = [permissions.AllowAny]
 
 @extend_schema(
     parameters=[
         OpenApiParameter(name='q', description='Buscar en nombre/descripcion', required=False, type=OpenApiTypes.STR),
         OpenApiParameter(name='min_price', description='Precio mínimo', required=False, type=OpenApiTypes.NUMBER),
         OpenApiParameter(name='max_price', description='Precio máximo', required=False, type=OpenApiTypes.NUMBER),
-        OpenApiParameter(name='category', description='Slug de categoría', required=False, type=OpenApiTypes.STR),
         OpenApiParameter(name='in_stock', description='true/false', required=False, type=OpenApiTypes.STR),
         OpenApiParameter(name='order', description='price_asc | price_desc | name | newest | oldest', required=False, type=OpenApiTypes.STR),
     ]
@@ -38,7 +33,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
     pagination_class = SmallPagination
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ["nombre", "descripcion", "category__nombre"]
+    search_fields = ["nombre", "descripcion"]
     ordering_fields = ["creado_en", "precio", "nombre"]
 
     def get_queryset(self):
@@ -59,10 +54,6 @@ class ProductViewSet(viewsets.ModelViewSet):
             qs = qs.filter(precio__gte=min_price)
         if max_price:
             qs = qs.filter(precio__lte=max_price)
-
-        cat = request.query_params.get('category') or ''
-        if cat:
-            qs = qs.filter(category__slug=cat)
 
         in_stock = (request.query_params.get('in_stock') or '').lower()
         if in_stock == 'true':

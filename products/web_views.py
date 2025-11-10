@@ -9,8 +9,8 @@ from django.http import HttpResponseForbidden
 from django.template import TemplateDoesNotExist
 from django.template.loader import select_template
 
-from .models import Product, Category
-from .forms import ProductForm, CategoryForm
+from .models import Product
+from .forms import ProductForm
 
 
 # Helpers
@@ -40,7 +40,6 @@ def product_list(request):
     q = (request.GET.get("q") or "").strip()
     min_price_raw = (request.GET.get("min_price") or "").strip()
     max_price_raw = (request.GET.get("max_price") or "").strip()
-    cat_slug = (request.GET.get("category") or "").strip()
     in_stock = (request.GET.get("in_stock") or "").strip().lower()
     order = (request.GET.get("order") or "").strip().lower()
 
@@ -48,13 +47,10 @@ def product_list(request):
     max_price = _safe_float(max_price_raw) if max_price_raw else None
 
     # ❗ Quitamos `.only(...)` para no depender de que exista image_url u otros campos
-    qs = Product.objects.filter(activo=True).select_related("category")
+    qs = Product.objects.filter(activo=True).select_related("-creado_en")
 
     if q:
         qs = qs.filter(Q(nombre__icontains=q) | Q(descripcion__icontains=q))
-
-    if cat_slug:
-        qs = qs.filter(category__slug=cat_slug)
 
     if min_price is not None:
         qs = qs.filter(precio__gte=min_price)
@@ -86,9 +82,7 @@ def product_list(request):
         "min_price": min_price_raw,
         "max_price": max_price_raw,
         "order": order,
-        "category": cat_slug,
         "in_stock": in_stock,
-        "categories": Category.objects.order_by("nombre"),
     }
 
     try:
@@ -105,7 +99,7 @@ def product_list(request):
 
 @ensure_csrf_cookie
 def product_detail(request, pk: int):
-    p = get_object_or_404(Product.objects.select_related("category"), pk=pk, activo=True)
+    p = get_object_or_404(Product.objects.select_related("-creado_en"), pk=pk, activo=True)
     return render(request, "products/detail.html", {"p": p})
 
 
@@ -125,52 +119,6 @@ def product_create(request):
     else:
         form = ProductForm()
     return render(request, "products/manage_form.html", {"form": form, "is_edit": False, "product": None})
-
-
-# GESTIÓN DE CATEGORÍAS (solo staff/admin)
-@login_required
-def category_list(request):
-    if not _is_staff(request.user):
-        return HttpResponseForbidden("Solo staff.")
-    qs = Category.objects.order_by("nombre")
-    return render(request, "categories/manage/list.html", {"items": qs})
-
-@login_required
-@csrf_protect
-def category_create(request):
-    if not _is_staff(request.user):
-        return HttpResponseForbidden("Solo staff.")
-    form = CategoryForm(request.POST or None)
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        _toast(request, "Categoría creada")
-        return redirect("/categories/manage/")
-    return render(request, "categories/manage/form.html", {"form": form, "mode": "create"})
-
-@login_required
-@csrf_protect
-def category_update(request, pk: int):
-    if not _is_staff(request.user):
-        return HttpResponseForbidden("Solo staff.")
-    obj = get_object_or_404(Category, pk=pk)
-    form = CategoryForm(request.POST or None, instance=obj)
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        _toast(request, "Categoría actualizada")
-        return redirect("/categories/manage/")
-    return render(request, "categories/manage/form.html", {"form": form, "mode": "edit", "obj": obj})
-
-@login_required
-@csrf_protect
-def category_delete(request, pk: int):
-    if not _is_staff(request.user):
-        return HttpResponseForbidden("Solo staff.")
-    obj = get_object_or_404(Category, pk=pk)
-    if request.method == "POST":
-        obj.delete()
-        _toast(request, "Categoría eliminada")
-        return redirect("/categories/manage/")
-    return render(request, "categories/manage/confirm_delete.html", {"obj": obj})
 
 
 # GESTIÓN DE PRODUCTOS (owner o staff)

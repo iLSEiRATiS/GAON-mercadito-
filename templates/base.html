@@ -160,9 +160,6 @@
         <nav class="nav" id="nav-auth" aria-label="Navegación principal">
           <a href="/products/" data-link>Productos</a>
           <a href="/about/" data-link>Nosotros</a>
-          {% if request.user.is_authenticated and request.user.is_staff %}
-            <a href="/categories/manage/" data-link>Categorías</a>
-          {% endif %}
           <a class="nav-link" href="{% url 'compare-prices' %}">Comparar precios</a>
           
           <!-- Visible solo para invitados -->

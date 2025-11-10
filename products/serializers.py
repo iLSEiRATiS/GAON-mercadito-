@@ -1,23 +1,15 @@
 from rest_framework import serializers
-from .models import Product, Category
+from .models import Product
 
-class CategoryMiniSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Category
-        fields = ["id", "nombre", "slug"]
 
 class ProductSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source="user.username")
-    category = CategoryMiniSerializer(read_only=True)
-    category_id = serializers.PrimaryKeyRelatedField(
-        source="category", queryset=Category.objects.all(), write_only=True, allow_null=True, required=False
-    )
     imagen_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = [
-            "id", "user", "category", "category_id",
+            "id", "user",
             "nombre", "precio", "descripcion",
             "imagen", "imagen_url", "stock", "activo",
             "creado_en",
