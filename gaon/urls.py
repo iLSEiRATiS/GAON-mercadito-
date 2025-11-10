@@ -5,7 +5,6 @@ from django.views.generic import RedirectView, TemplateView
 from django.conf import settings
 from django.conf.urls.static import static
 from django.http import HttpResponse
-from django.contrib import admin
 from django.urls import path, include
 
 # API docs
@@ -60,7 +59,6 @@ urlpatterns = [
         "api/scraping/",
         include(("scraping.api.urls", "scraping_api"), namespace="scraping_api"),
     ),
-    path("admin/", admin.site.urls),
 
     # ---------- Web (HTML) ----------
     path("products/", include("products.web_urls")),
@@ -68,6 +66,8 @@ urlpatterns = [
     path("payments/", include("payments.web_urls")),
     path("account/", include("users.web_urls")),
     path("categories/", include("products.categories_urls")),
+    path("api/foro/", include("foro.api.urls")),
+    path("foro/", include("foro.web_urls")),
 
     # Auth HTML
     path("login/", login_page, name="login-page"),
@@ -84,5 +84,7 @@ urlpatterns = [
     # ---------- SEO ----------
     path("robots.txt", robots_txt, name="robots"),
     path("sitemap.xml", sitemap, {"sitemaps": sitemaps}, name="django.contrib.sitemaps.views.sitemap"),
+
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

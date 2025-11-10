@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Foro{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="d-flex align-items-center mb-3">
+    <h1 class="h3 m-0">Foro</h1>
+  </div>
+
+  <!-- Filtros -->
+  <form class="row g-2 mb-3" method="get">
+    <div class="col-12 col-md-6">
+      <input type="search" name="q" value="{{ q }}" class="form-control" placeholder="Buscar en el foro...">
+    </div>
+    <div class="col-6 col-md-3">
+      <select name="order" class="form-select">
+        <option value="new" {% if order == "new" %}selected{% endif %}>Más nuevos</option>
+        <option value="comments" {% if order == "comments" %}selected{% endif %}>Más comentados</option>
+      </select>
+    </div>
+    <div class="col-6 col-md-3 d-grid">
+      <button class="btn btn-primary" type="submit">Aplicar</button>
+    </div>
+  </form>
+
+  <!-- Chips de categorías -->
+  {% if cats %}
+    <div class="mb-3">
+      <a href="?{% if q %}q={{ q|urlencode }}&{% endif %}{% if order %}order={{ order }}&{% endif %}" class="btn btn-sm {% if not cat %}btn-primary{% else %}btn-outline-primary{% endif %} me-1">Todas</a>
+      {% for c in cats %}
+        <a href="?{% if q %}q={{ q|urlencode }}&{% endif %}{% if order %}order={{ order }}&{% endif %}cat={{ c.slug }}" class="btn btn-sm {% if cat == c.slug %}btn-primary{% else %}btn-outline-primary{% endif %} me-1">{{ c.nombre }}</a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if posts %}
+    <div class="row g-4">
+      {% for p in posts %}
+        <div class="col-12 col-sm-6 col-lg-4">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body d-flex flex-column">
+              <div class="d-flex align-items-center justify-content-between">
+                <h2 class="h5 card-title mb-2">
+                  <a class="text-decoration-none"
+                     href="{% if p.slug %}{% url 'foro:detail-slug' p.slug %}{% else %}{% url 'foro:detail' p.pk %}{% endif %}">
+                    {{ p.titulo }}
+                  </a>
+                </h2>
+                {% if p.is_pinned %}
+                  <span class="badge text-bg-warning">Fijado</span>
+                {% endif %}
+              </div>
+
+              <p class="text-muted small mb-2">
+                por {{ p.autor }} • {{ p.creado_en|date:"d/m/Y H:i" }}
+                {% if p.categoria %} • <span class="badge text-bg-light">{{ p.categoria.nombre }}</span>{% endif %}
+              </p>
+
+              <p class="card-text text-truncate-3">{{ p.contenido|truncatechars:180 }}</p>
+
+              <div class="mt-auto d-flex justify-content-between align-items-center">
+                <a class="btn btn-sm btn-primary"
+                   href="{% if p.slug %}{% url 'foro:detail-slug' p.slug %}{% else %}{% url 'foro:detail' p.pk %}{% endif %}">
+                  Ver
+                </a>
+                <span class="badge text-bg-light">{{ p.comentarios.count }} comentarios</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if is_paginated %}
+      <nav class="mt-4">
+        <ul class="pagination">
+          {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ q|urlencode }}&order={{ order }}&cat={{ cat }}">Anterior</a></li>
+          {% else %}<li class="page-item disabled"><span class="page-link">Anterior</span></li>{% endif %}
+
+          <li class="page-item disabled"><span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+
+          {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ q|urlencode }}&order={{ order }}&cat={{ cat }}">Siguiente</a></li>
+          {% else %}<li class="page-item disabled"><span class="page-link">Siguiente</span></li>{% endif %}
+        </ul>
+      </nav>
+    {% endif %}
+  {% else %}
+    <div class="text-center py-5">
+      <p class="lead mb-1">No hay resultados.</p>
+      <p class="text-muted">Probá limpiar filtros o buscar otra cosa.</p>
+    </div>
+  {% endif %}
+</div>
+
+<style>
+.text-truncate-3{
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+}
+</style>
+{% endblock %}

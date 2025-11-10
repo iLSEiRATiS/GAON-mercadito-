@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'payments',
     "scraping",
     "chat",
+    "foro",
 ]
 
 MIDDLEWARE = [
@@ -82,20 +83,18 @@ ASGI_APPLICATION = 'gaon.asgi.application'
 SITE_ID = 1
 
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',        # Django auth
-    'allauth.account.auth_backends.AuthenticationBackend',  # allauth
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
-LOGIN_REDIRECT_URL = '/social/bridge/'      # adonde volver tras login OK
+LOGIN_REDIRECT_URL = '/social/bridge/'
 LOGOUT_REDIRECT_URL = '/'
-ACCOUNT_LOGOUT_ON_GET = True             # adonde volver tras logout
-# allauth: inicia el flujo del proveedor al hacer GET (sin formulario intermedio)
+ACCOUNT_LOGOUT_ON_GET = True
 SOCIALACCOUNT_LOGIN_ON_GET = True
 
-# Permitir login con usuario o email
 ACCOUNT_LOGIN_METHODS = {"username", "email"}
 ACCOUNT_EMAIL_VERIFICATION = "none"
-# Campos del formulario de alta (los que terminan con * son obligatorios)
+
 ACCOUNT_SIGNUP_FIELDS = [
     "username*",
     "email*",
@@ -105,7 +104,6 @@ ACCOUNT_SIGNUP_FIELDS = [
     "last_name*",
 ]
 ACCOUNT_UNIQUE_EMAIL = True
-
 
 DATABASES = {
     'default': {
@@ -148,19 +146,16 @@ SPECTACULAR_SETTINGS = {
 
 LOGIN_URL = '/login/'
 
-
 # MercadoPago
 MP_ACCESS_TOKEN = env("MP_ACCESS_TOKEN", default="")
 MP_PUBLIC_KEY = env("MP_PUBLIC_KEY", default="")
 
-# URL base para back_urls/webhook (lo usamos en payments)
 SITE_URL = env("SITE_URL", default="")
 def ABSOLUTE_URI(request, path: str):
     if SITE_URL:
         return SITE_URL.rstrip("/") + path
     return request.build_absolute_uri(path)
 
-# Static & Media
 from pathlib import Path as _P
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
@@ -173,20 +168,27 @@ SOCIALACCOUNT_PROVIDERS = {
     },
 }
 
-# Social login: autocompletar datos desde provider
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_ADAPTER = "users.adapters.MySocialAccountAdapter"
 
-# --- CSRF/Session en desarrollo (HTTP) ---
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_SECURE = False
-CSRF_COOKIE_HTTPONLY = False      # opcional; en plantillas no importa, pero ayuda si usás JS
-CSRF_COOKIE_SAMESITE = "Lax"
+# ✅✅✅ --- CSRF / SESSION (ÚNICO BLOQUE MODIFICADO) ---
+# Modo desarrollo: cookies no seguras, acepta 127.0.0.1 y localhost
+if DEBUG:
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    CSRF_COOKIE_HTTPONLY = False
+    CSRF_COOKIE_SAMESITE = "Lax"
+    CSRF_TRUSTED_ORIGINS = [
+        "http://127.0.0.1:8000",
+        "http://localhost:8000",
+    ]
+# Producción: cookies seguras
+else:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    CSRF_COOKIE_SAMESITE = "Lax"
 
-# Asegurá host de dev como confiable
-CSRF_TRUSTED_ORIGINS = [
-    "http://127.0.0.1:8000",
-]
+CSRF_USE_SESSIONS = True
 
 GEMINI_API_KEY = env("GEMINI_API_KEY", default="")
 GEMINI_MODEL = env("GEMINI_MODEL", default="gemini-1.5-flash-002")
