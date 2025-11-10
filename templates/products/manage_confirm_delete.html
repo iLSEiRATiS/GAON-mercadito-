@@ -11,4 +11,25 @@
     </div>
   </form>
 </div>
+<script>
+  // Sincroniza el input csrfmiddlewaretoken con la cookie antes de enviar
+  (function(){
+    function getCookie(name){
+      const parts = document.cookie.split(';').map(c=>c.trim());
+      const match = parts.find(p => p.startsWith(name + '='));
+      return match ? decodeURIComponent(match.split('=')[1]) : '';
+    }
+    const form = document.querySelector('form[method="post"]');
+    if(!form) return;
+    form.addEventListener('submit', function(){
+      try{
+        const cookieVal = getCookie('csrftoken');
+        const input = form.querySelector('input[name="csrfmiddlewaretoken"]');
+        if(input && cookieVal){
+          input.value = cookieVal;
+        }
+      }catch(e){ console.error('Error syncing csrf token (delete):', e); }
+    });
+  })();
+</script>
 {% endblock %}

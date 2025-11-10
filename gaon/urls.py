@@ -67,7 +67,6 @@ urlpatterns = [
     path("cart/", include("cart.web_urls")),
     path("payments/", include("payments.web_urls")),
     path("account/", include("users.web_urls")),
-    path("categories/", include("products.categories_urls")),
 
     # Auth HTML
     path("login/", login_page, name="login-page"),

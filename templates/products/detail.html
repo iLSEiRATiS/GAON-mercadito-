@@ -23,7 +23,7 @@
       <h1 style="margin:0 0 6px">{{ p.nombre }}</h1>
       <div class="price" style="font-size:1.5rem; margin:.3rem 0">${{ p.precio|floatformat:0 }}</div>
       <p class="text-muted">{{ p.descripcion|default:"" }}</p>
-      <p class="text-muted">Categoría: {{ p.category|default:"-" }} • Stock: {{ p.stock }}</p>
+      <p class="text-muted">Stock: {{ p.stock }}</p>
 
       <div class="row" style="gap:8px; flex-wrap:wrap">
         <input id="qty" type="number" min="1" value="1" style="width:100px">

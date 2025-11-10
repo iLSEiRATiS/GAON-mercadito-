@@ -1,16 +1,15 @@
 # products/web_views.py
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.views.decorators.csrf import ensure_csrf_cookie, csrf_protect
 from django.contrib import messages
 from django.http import HttpResponseForbidden
 from django.template import TemplateDoesNotExist
 from django.template.loader import select_template
-
-from .models import Product, Category
-from .forms import ProductForm, CategoryForm
+from django.views.generic import CreateView, ListView, UpdateView, DeleteView
+from django.urls import reverse_lazy
+from .models import Product
+from .forms import ProductForm
 
 
 # Helpers
@@ -31,7 +30,6 @@ def _safe_float(val: str):
 
 
 # TIENDA PÚBLICA
-@ensure_csrf_cookie
 def product_list(request):
     """
     Listado de productos con filtros. Intenta usar 'products/_card.html'
@@ -40,7 +38,6 @@ def product_list(request):
     q = (request.GET.get("q") or "").strip()
     min_price_raw = (request.GET.get("min_price") or "").strip()
     max_price_raw = (request.GET.get("max_price") or "").strip()
-    cat_slug = (request.GET.get("category") or "").strip()
     in_stock = (request.GET.get("in_stock") or "").strip().lower()
     order = (request.GET.get("order") or "").strip().lower()
 
@@ -48,13 +45,12 @@ def product_list(request):
     max_price = _safe_float(max_price_raw) if max_price_raw else None
 
     # ❗ Quitamos `.only(...)` para no depender de que exista image_url u otros campos
-    qs = Product.objects.filter(activo=True).select_related("category")
+    # select_related debe recibir nombres de relaciones (foreign keys). Seleccionamos
+    # el usuario para evitar consultas extra al renderizar el listado.
+    qs = Product.objects.filter(activo=True).select_related("user")
 
     if q:
         qs = qs.filter(Q(nombre__icontains=q) | Q(descripcion__icontains=q))
-
-    if cat_slug:
-        qs = qs.filter(category__slug=cat_slug)
 
     if min_price is not None:
         qs = qs.filter(precio__gte=min_price)
@@ -86,9 +82,7 @@ def product_list(request):
         "min_price": min_price_raw,
         "max_price": max_price_raw,
         "order": order,
-        "category": cat_slug,
         "in_stock": in_stock,
-        "categories": Category.objects.order_by("nombre"),
     }
 
     try:
@@ -102,132 +96,117 @@ def product_list(request):
         messages.error(request, f"Error al renderizar productos: {e}")
         return render(request, "base.html", {"content": f"Error: {e}", **ctx}, status=500)
 
-
-@ensure_csrf_cookie
 def product_detail(request, pk: int):
-    p = get_object_or_404(Product.objects.select_related("category"), pk=pk, activo=True)
+    p = get_object_or_404(Product.objects.select_related("user"), pk=pk, activo=True)
     return render(request, "products/detail.html", {"p": p})
 
 
 # CREAR PRODUCTO (HTML) – requiere login
-@login_required
-@ensure_csrf_cookie
-@csrf_protect
-def product_create(request):
-    if request.method == "POST":
-        form = ProductForm(request.POST, request.FILES)
-        if form.is_valid():
-            prod = form.save(commit=False)
-            prod.user = request.user
-            prod.save()
-            _toast(request, "Producto creado")
-            return redirect("product-manage")
-    else:
-        form = ProductForm()
-    return render(request, "products/manage_form.html", {"form": form, "is_edit": False, "product": None})
+class ProductCreateView(CreateView):
+    model = Product
+    form_class = ProductForm
+    template_name = "products/manage_form.html"
+    success_url = reverse_lazy("product-manage")
 
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
 
-# GESTIÓN DE CATEGORÍAS (solo staff/admin)
-@login_required
-def category_list(request):
-    if not _is_staff(request.user):
-        return HttpResponseForbidden("Solo staff.")
-    qs = Category.objects.order_by("nombre")
-    return render(request, "categories/manage/list.html", {"items": qs})
+    def form_valid(self, form):
+        # Asignar automáticamente el usuario dueño del producto
+        form.instance.user = self.request.user
+        messages.success(self.request, "✅ Producto creado con éxito.")
+        return super().form_valid(form)
 
-@login_required
-@csrf_protect
-def category_create(request):
-    if not _is_staff(request.user):
-        return HttpResponseForbidden("Solo staff.")
-    form = CategoryForm(request.POST or None)
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        _toast(request, "Categoría creada")
-        return redirect("/categories/manage/")
-    return render(request, "categories/manage/form.html", {"form": form, "mode": "create"})
-
-@login_required
-@csrf_protect
-def category_update(request, pk: int):
-    if not _is_staff(request.user):
-        return HttpResponseForbidden("Solo staff.")
-    obj = get_object_or_404(Category, pk=pk)
-    form = CategoryForm(request.POST or None, instance=obj)
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        _toast(request, "Categoría actualizada")
-        return redirect("/categories/manage/")
-    return render(request, "categories/manage/form.html", {"form": form, "mode": "edit", "obj": obj})
-
-@login_required
-@csrf_protect
-def category_delete(request, pk: int):
-    if not _is_staff(request.user):
-        return HttpResponseForbidden("Solo staff.")
-    obj = get_object_or_404(Category, pk=pk)
-    if request.method == "POST":
-        obj.delete()
-        _toast(request, "Categoría eliminada")
-        return redirect("/categories/manage/")
-    return render(request, "categories/manage/confirm_delete.html", {"obj": obj})
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["is_edit"] = False
+        ctx["product"] = None
+        return ctx
 
 
 # GESTIÓN DE PRODUCTOS (owner o staff)
-@login_required
-def my_products(request):
-    qs = Product.objects.all().order_by("-creado_en")
-    if not _is_staff(request.user):
-        qs = qs.filter(user=request.user)
-    paginator = Paginator(qs, 12)
-    page_obj = paginator.get_page(request.GET.get("page"))
-    return render(request, "products/manage_list.html", {"page_obj": page_obj})
+class ProductManageListView(ListView):
+    """
+    Lista de productos para gestión general (/products/manage/).
+    - Si es staff/superuser → ve todos
+    - Si NO → se redirige a la vista "mis productos"
+    """
+    model = Product
+    template_name = "products/manage_list.html"
+    paginate_by = 20
 
-@login_required
-@ensure_csrf_cookie
-@csrf_protect
-def product_manage_edit(request, pk: int):
-    prod = get_object_or_404(Product, pk=pk)
-    if not (request.user.is_superuser or request.user.is_staff or prod.user_id == request.user.id):
-        messages.error(request, "No tenés permiso para editar este producto.")
-        return redirect("product-manage")
+    def dispatch(self, request, *args, **kwargs):
+        if not _is_staff(request.user):
+            return redirect("products-mine")
+        return super().dispatch(request, *args, **kwargs)
 
-    if request.method == "POST":
-        form = ProductForm(request.POST, request.FILES, instance=prod)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Producto actualizado.")
+    def get_queryset(self):
+        return Product.objects.all().order_by("-creado_en")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["mode"] = "all"
+        return ctx
+
+
+class MyProductsListView(ListView):
+    """
+    Lista de productos propios (/products/manage/mine/).
+    """
+    model = Product
+    template_name = "products/manage_list.html"
+    paginate_by = 20
+
+    def get_queryset(self):
+        return Product.objects.filter(user=self.request.user).order_by("-creado_en")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["mode"] = "mine"
+        return ctx
+
+class ProductUpdateView(UpdateView):
+    model = Product
+    form_class = ProductForm
+    template_name = "products/manage_form.html"
+    success_url = reverse_lazy("product-manage")
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        user = request.user
+
+        if not (user.is_superuser or user.is_staff or self.object.user_id == user.id):
+            messages.error(request, "No tenés permiso para editar este producto.")
             return redirect("product-manage")
-    else:
-        form = ProductForm(instance=prod)
 
-    return render(request, "products/manage_form.html", {"form": form, "is_edit": True, "product": prod})
+        return super().dispatch(request, *args, **kwargs)
 
-@login_required
-@ensure_csrf_cookie
-@csrf_protect
-def product_delete(request, pk: int):
-    obj = get_object_or_404(Product, pk=pk)
-    if not _is_staff(request.user) and obj.user_id != request.user.id:
-        return HttpResponseForbidden("No sos dueño de este producto.")
-    if request.method == "POST":
-        obj.delete()
-        _toast(request, "Producto eliminado")
-        return redirect("product-manage")
-    return render(request, "products/manage_confirm_delete.html", {"product": obj})
+    def form_valid(self, form):
+        messages.info(self.request, "✏️ Producto actualizado correctamente.")
+        return super().form_valid(form)
 
-@login_required
-def product_manage(request):
-    if not _is_staff(request.user):
-        return redirect("products-mine")
-    qs = Product.objects.all().order_by("-creado_en")
-    paginator = Paginator(qs, 20)
-    page_obj = paginator.get_page(request.GET.get("page"))
-    return render(request, "products/manage_list.html", {"page_obj": page_obj, "mode": "all"})
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["is_edit"] = True
+        ctx["product"] = self.object
+        return ctx
 
-@login_required
-def product_manage_mine(request):
-    qs = Product.objects.filter(user=request.user).order_by("-creado_en")
-    paginator = Paginator(qs, 20)
-    page_obj = paginator.get_page(request.GET.get("page"))
-    return render(request, "products/manage_list.html", {"page_obj": page_obj, "mode": "mine"})
+class ProductDeleteView(DeleteView):
+    model = Product
+    template_name = "products/manage_confirm_delete.html"
+    success_url = reverse_lazy("product-manage")
+    context_object_name = "obj"  # así matchea con tu template
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        user = request.user
+
+        if not (_is_staff(user) or self.object.user_id == user.id):
+            return HttpResponseForbidden("No sos dueño de este producto.")
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        _toast(request, "🗑️ Producto eliminado.")
+        return super().delete(request, *args, **kwargs)
+

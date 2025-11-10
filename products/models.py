@@ -1,36 +1,8 @@
 # products/models.py
 from django.db import models
 from django.conf import settings
-from django.utils.text import slugify
 import os
 from uuid import uuid4
-
-
-class Category(models.Model):
-    nombre = models.CharField(max_length=100, unique=True)
-    slug = models.SlugField(max_length=120, unique=True, blank=True)
-
-    class Meta:
-        ordering = ["nombre"]
-
-    def __str__(self):
-        return self.nombre
-
-    def save(self, *args, **kwargs):
-        base = slugify(self.nombre or "")
-        if not base:
-            base = "categoria"
-
-        if not self.slug or slugify(self.nombre) != self.slug:
-            slug = base
-            i = 1
-            while Category.objects.exclude(pk=self.pk).filter(slug=slug).exists():
-                i += 1
-                slug = f"{base}-{i}"
-            self.slug = slug
-
-        super().save(*args, **kwargs)
-
 
 def product_upload_to(instance, filename):
     name, ext = os.path.splitext(filename)
@@ -47,7 +19,6 @@ class Product(models.Model):
         blank=True,
         related_name="products",
     )
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
     nombre = models.CharField(max_length=100)
     precio = models.DecimalField(max_digits=10, decimal_places=2)
     descripcion = models.TextField(blank=True)
