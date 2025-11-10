@@ -187,6 +187,7 @@ CSRF_COOKIE_SAMESITE = "Lax"
 # Asegurá host de dev como confiable
 CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:8000",
+    "http://localhost:8000",
 ]
 
 GEMINI_API_KEY = env("GEMINI_API_KEY", default="")
