@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Foro — Comentarios{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+    <div>
+      <h1>Foro</h1>
+      <p class="text-muted">Últimos comentarios publicados sobre productos.</p>
+    </div>
+
+    {% if request.user.is_authenticated %}
+      <a class="btn" href="{% url 'foro:post-create' %}">Nueva publicación</a>
+    {% else %}
+      <a class="btn outline" href="/login/">Iniciar sesión para publicar</a>
+    {% endif %}
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:12px;">
+    {% for c in page_obj %}
+      <div class="card pad">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+          <div>
+            <strong style="font-size:1rem">{{ c.autor }}</strong>
+            <div class="text-muted" style="font-size:.85rem">en <a href="/products/{{ c.producto.id }}/">{{ c.producto.nombre }}</a></div>
+          </div>
+          <div class="text-muted" style="font-size:.8rem">{{ c.creado_en|date:"SHORT_DATETIME_FORMAT" }}</div>
+        </div>
+
+        <div style="margin-top:8px; white-space:pre-wrap">{{ c.texto }}</div>
+
+      </div>
+    {% empty %}
+      <div class="card pad">No hay comentarios publicados aún.</div>
+    {% endfor %}
+  </div>
+
+  <!-- Paginación -->
+  {% if page_obj.paginator.num_pages > 1 %}
+    <div style="display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap">
+      {% if page_obj.has_previous %}
+        <a class="btn outline" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+      {% else %}
+        <button class="btn outline" disabled>Anterior</button>
+      {% endif %}
+
+      <div style="display:flex;gap:6px;align-items:center">
+        {% for num in page_obj.paginator.page_range %}
+          {% if page_obj.number == num %}
+            <span style="padding:6px 10px;border-radius:8px;background:var(--brand-50);color:var(--brand-600);font-weight:600">{{ num }}</span>
+          {% else %}
+            <a href="?page={{ num }}" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:#fff">{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+      </div>
+
+      {% if page_obj.has_next %}
+        <a class="btn" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+      {% else %}
+        <button class="btn" disabled>Siguiente</button>
+      {% endif %}
+    </div>
+  {% endif %}
+
+</section>
+{% endblock %}

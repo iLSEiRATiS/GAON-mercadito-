@@ -40,6 +40,7 @@ INSTALLED_APPS = [
 
     #Propias
     'users',
+    'foro',
     'products',
     'cart',
     'payments',

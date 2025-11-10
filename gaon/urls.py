@@ -61,6 +61,7 @@ urlpatterns = [
         include(("scraping.api.urls", "scraping_api"), namespace="scraping_api"),
     ),
     path("api/presupuestos/", include("presupuestos.api.urls")),
+    path("api/foro/", include(("foro.api.urls", "foro_api"), namespace="foro_api")),
 
     # ---------- Web (HTML) ----------
     path("products/", include("products.web_urls")),
@@ -76,6 +77,7 @@ urlpatterns = [
 
     # API del chatbot (Gemini)
     path("api/chat/", include("chat.urls")),
+    path("foro/", include("foro.urls")),
 
     # Comparador de precios (HTML)
     path("comparar/", compare_prices_view, name="compare-prices"),
