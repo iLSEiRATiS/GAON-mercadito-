@@ -45,7 +45,9 @@ def product_list(request):
     max_price = _safe_float(max_price_raw) if max_price_raw else None
 
     # ❗ Quitamos `.only(...)` para no depender de que exista image_url u otros campos
-    qs = Product.objects.filter(activo=True).select_related("-creado_en")
+    # select_related debe recibir nombres de relaciones (foreign keys). Seleccionamos
+    # el usuario para evitar consultas extra al renderizar el listado.
+    qs = Product.objects.filter(activo=True).select_related("user")
 
     if q:
         qs = qs.filter(Q(nombre__icontains=q) | Q(descripcion__icontains=q))
@@ -95,7 +97,7 @@ def product_list(request):
         return render(request, "base.html", {"content": f"Error: {e}", **ctx}, status=500)
 
 def product_detail(request, pk: int):
-    p = get_object_or_404(Product.objects.select_related("-creado_en"), pk=pk, activo=True)
+    p = get_object_or_404(Product.objects.select_related("user"), pk=pk, activo=True)
     return render(request, "products/detail.html", {"p": p})
 
 
@@ -105,6 +107,9 @@ class ProductCreateView(CreateView):
     form_class = ProductForm
     template_name = "products/manage_form.html"
     success_url = reverse_lazy("product-manage")
+
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
         # Asignar automáticamente el usuario dueño del producto

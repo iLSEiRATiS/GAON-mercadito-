@@ -57,4 +57,32 @@
     <a href="/products/manage/" class="btn outline">Cancelar</a>
   </div>
 </form>
+<script>
+  // Asegura que el input oculto csrfmiddlewaretoken use el valor actual de la cookie
+  // Esto corrige casos donde una petición AJAX rotó la cookie después de renderizar
+  // el formulario (causa de 'CSRF token from POST incorrect').
+  (function(){
+    function getCookie(name){
+      const parts = document.cookie.split(';').map(c=>c.trim());
+      const match = parts.find(p => p.startsWith(name + '='));
+      return match ? decodeURIComponent(match.split('=')[1]) : '';
+    }
+
+    const form = document.querySelector('form[enctype][method="post"]');
+    if(!form) return;
+
+    form.addEventListener('submit', function(){
+      try{
+        const cookieVal = getCookie('csrftoken');
+        const input = form.querySelector('input[name="csrfmiddlewaretoken"]');
+        if(input && cookieVal){
+          input.value = cookieVal;
+        }
+      }catch(e){
+        // no romper el envío si algo falla
+        console.error('Error syncing csrf token:', e);
+      }
+    });
+  })();
+</script>
 {% endblock %}

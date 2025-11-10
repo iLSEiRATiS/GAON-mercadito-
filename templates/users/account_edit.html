@@ -2,7 +2,7 @@
 {% block content %}
 <h1>Editar perfil</h1>
 
-<form method="post" class="card pad" style="max-width:640px">
+<form id="account-edit-form" method="post" class="card pad" style="max-width:640px">
   {% csrf_token %}
   {{ form.non_field_errors }}
 
@@ -19,6 +19,26 @@
     <a class="btn outline" href="/account/">Cancelar</a>
   </div>
 </form>
+
+<!-- Sync csrf token immediately on submit (attach synchronously so it runs even if async init hasn't finished) -->
+<script>
+  (function(){
+    const form = document.getElementById('account-edit-form') || document.querySelector('form');
+    if(!form) return;
+    function getCookie(name){
+      const parts = document.cookie.split(';').map(c=>c.trim());
+      const match = parts.find(p=>p.startsWith(name+'='));
+      return match ? decodeURIComponent(match.split('=')[1]) : '';
+    }
+    form.addEventListener('submit', function(){
+      try{
+        const input = form.querySelector('input[name="csrfmiddlewaretoken"]');
+        const cookieVal = getCookie('csrftoken');
+        if(input && cookieVal) input.value = cookieVal;
+      }catch(e){/* ignore */}
+    }, true); // use capture so it runs before other listeners
+  })();
+</script>
 
 <div class="card pad" style="max-width:640px;margin-top:12px">
   <div class="row" style="gap:8px;flex-wrap:wrap">
@@ -75,6 +95,13 @@ function getCsrf(){
   if (!F) return;
 
   F.addEventListener('submit', async (ev)=>{
+    // Sincronizar el input oculto csrfmiddlewaretoken con la cookie actual
+    try{
+      const csrfInput = F.querySelector('input[name="csrfmiddlewaretoken"]');
+      const current = getCsrf();
+      if(csrfInput && current) csrfInput.value = current;
+    }catch(e){ console.error('Error syncing csrf input (account edit):', e); }
+
     ev.preventDefault();
 
     const fd = new FormData(F);

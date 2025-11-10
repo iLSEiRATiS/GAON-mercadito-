@@ -3,7 +3,7 @@ from . import web_views
 
 urlpatterns = [
     # públicas (tienda)
-    path("", web_views.ProductManageListView.as_view(), name="product-manage"),
+    path("", web_views.product_list, name="product-list"),
     path("<int:pk>/", web_views.product_detail, name="product-detail"),
 
     # alta simple / crear producto (usa la misma vista para /create/ y /manage/new/)

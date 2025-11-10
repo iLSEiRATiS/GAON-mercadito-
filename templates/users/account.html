@@ -82,10 +82,20 @@
   }
 
   async function start(){
-    if(!window.GAON_AUTH?.hasToken?.()){ needLogin(); return; }
-    const r = await fetch('/api/auth/me/', { headers: { ...GAON_AUTH.authHeader() }});
-    const data = await r.json();
-    if (!r.ok) { needLogin(); return; }
+    // Soportar dos modos de autenticación: Token en localStorage o sesión Django (cookie).
+    let data;
+    if (window.GAON_AUTH?.hasToken?.()){
+      const r = await fetch('/api/auth/me/', { headers: { ...GAON_AUTH.authHeader() }});
+      data = await r.json();
+      if (!r.ok) { needLogin(); return; }
+    } else {
+      // Intentar autenticar por sesión (cookie)
+      try{
+        const r = await fetch('/api/auth/me/', { credentials: 'same-origin' });
+        data = await r.json();
+        if (!r.ok) { needLogin(); return; }
+      }catch(_){ needLogin(); return; }
+    }
 
     card.innerHTML = `
       <div class="row" style="justify-content:space-between; gap:8px; flex-wrap:wrap">
@@ -106,7 +116,7 @@
     `;
 
     if (actions) actions.style.display = 'flex';
-    const isStaff = !!data.is_staff || !!data.is_superuser || /^(staff|admin)$/i.test(String(data.rol||''));
+  const isStaff = !!data.is_staff || !!data.is_superuser || /^(staff|admin)$/i.test(String(data.rol||''));
     const btnManage = document.getElementById('btn-manage');
     if (btnManage) btnManage.style.display = isStaff ? '' : 'none';
 
